@@ -1,0 +1,60 @@
+// ─── Tailwind directives ──────────────────────────────────────────────────────
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+// ─── Angular Material theme ───────────────────────────────────────────────────
+@use "@angular/material" as mat;
+
+@include mat.core();
+
+$lms-primary: mat.define-palette(mat.$blue-palette, 600);
+$lms-accent:  mat.define-palette(mat.$violet-palette, 500);
+$lms-warn:    mat.define-palette(mat.$red-palette);
+
+$lms-theme: mat.define-light-theme((
+  color: (primary: $lms-primary, accent: $lms-accent, warn: $lms-warn),
+  typography: mat.define-typography-config(),
+  density: 0,
+));
+
+@include mat.all-component-themes($lms-theme);
+
+// ─── Global resets & base ─────────────────────────────────────────────────────
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+// ─── Utility classes ──────────────────────────────────────────────────────────
+
+// Page wrapper — use on every feature page's root element
+.page-container {
+  @apply p-6 max-w-7xl mx-auto;
+}
+
+// Card — use for content panels
+.lms-card {
+  @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
+}
+
+// Section heading
+.section-title {
+  @apply text-xl font-semibold text-slate-800 mb-4;
+}
+
+// Status badge colours — used in tables
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+
+  &.badge-success  { @apply bg-green-100 text-green-800; }
+  &.badge-warning  { @apply bg-yellow-100 text-yellow-800; }
+  &.badge-danger   { @apply bg-red-100 text-red-800; }
+  &.badge-info     { @apply bg-blue-100 text-blue-800; }
+  &.badge-neutral  { @apply bg-slate-100 text-slate-700; }
+}
