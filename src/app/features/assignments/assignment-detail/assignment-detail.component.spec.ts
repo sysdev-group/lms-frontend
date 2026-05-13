@@ -168,16 +168,18 @@ describe('AssignmentDetailComponent', () => {
     });
 
     it('sets error signal and clears isLoading on assignment load failure', async () => {
-      const asgSvc = { getAssignmentById: jasmine.createSpy().and.returnValue(throwError(() => ({ error: { message: 'Not found' } }))) };
+      const asgSvc = makeAssignmentService();
+      asgSvc.getAssignmentById.and.returnValue(throwError(() => ({ error: { message: 'Not found' } })));
       const subSvc = makeSubmissionService();
-      const { component } = await createComponent('Student', asgSvc as any, subSvc);
+      const { component } = await createComponent('Student', asgSvc, subSvc);
       expect(component.isLoading()).toBeFalse();
       expect(component.error()).toBe('Not found');
     });
 
     it('falls back to default error message when error has no message', async () => {
-      const asgSvc = { getAssignmentById: jasmine.createSpy().and.returnValue(throwError(() => ({}))) };
-      const { component } = await createComponent('Student', asgSvc as any);
+      const asgSvc = makeAssignmentService();
+      asgSvc.getAssignmentById.and.returnValue(throwError(() => ({})));
+      const { component } = await createComponent('Student', asgSvc);
       expect(component.error()).toBe('Failed to load assignment.');
     });
   });
