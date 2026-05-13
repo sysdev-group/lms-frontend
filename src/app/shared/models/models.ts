@@ -80,6 +80,20 @@ export interface UserQueryParams {
   pageSize?: number;
 }
 
+// ─── Files ────────────────────────────────────────────────────────────────────
+
+export interface FileMetadata {
+  id: string;
+  fileName: string;
+  originalName: string;
+  path: string;
+  size: number;
+  uploadedBy: string;
+  uploadDate: string;
+  relatedEntity: string;
+  entityId: string;
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export interface Course {
