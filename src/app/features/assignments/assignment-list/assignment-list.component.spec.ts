@@ -85,9 +85,11 @@ describe('AssignmentListComponent', () => {
   describe('deadlineInfo', () => {
     beforeEach(() => fixture.detectChanges());
 
-    it('returns "Overdue" and red class for a past deadline', () => {
-      const info = (component as any).deadlineInfo('2000-01-01');
-      expect(info.deadlineLabel).toBe('Overdue');
+    it('returns "Overdue by N days" and red class for a past deadline', () => {
+      const past = new Date();
+      past.setDate(past.getDate() - 3);
+      const info = (component as any).deadlineInfo(past.toISOString().split('T')[0]);
+      expect(info.deadlineLabel).toBe('Overdue by 3 days');
       expect(info.deadlineCss).toBe('text-sm font-medium text-red-600');
     });
 
@@ -113,11 +115,38 @@ describe('AssignmentListComponent', () => {
     });
 
     it('maps deadline info onto each assignment row', () => {
-      subject.next([makeAssignment({ deadline: '2000-01-01' })]);
+      const past = new Date();
+      past.setDate(past.getDate() - 3);
+      subject.next([makeAssignment({ deadline: past.toISOString().split('T')[0] })]);
       subject.complete();
       const row = component.assignments()[0];
-      expect(row.deadlineLabel).toBe('Overdue');
+      expect(row.deadlineLabel).toBe('Overdue by 3 days');
       expect(row.deadlineCss).toBe('text-sm font-medium text-red-600');
     });
+  });
+});
+
+describe('AssignmentListComponent — with courseId query param', () => {
+  let assignmentService: jasmine.SpyObj<AssignmentService>;
+
+  beforeEach(async () => {
+    assignmentService = jasmine.createSpyObj('AssignmentService', ['getAssignments']);
+    assignmentService.getAssignments.and.returnValue(new Subject<Assignment[]>().asObservable());
+
+    await TestBed.configureTestingModule({
+      imports: [AssignmentListComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AssignmentService, useValue: assignmentService },
+        { provide: AuthService, useValue: { userRole: signal(null) } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => 'course-42' } } } },
+      ],
+    }).compileComponents();
+
+    TestBed.createComponent(AssignmentListComponent).detectChanges();
+  });
+
+  it('calls getAssignments with the courseId when query param is present', () => {
+    expect(assignmentService.getAssignments).toHaveBeenCalledWith('course-42');
   });
 });

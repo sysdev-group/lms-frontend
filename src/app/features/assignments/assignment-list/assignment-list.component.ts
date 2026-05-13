@@ -108,9 +108,11 @@ export class AssignmentListComponent implements OnInit {
     const due = new Date(deadline);
     due.setHours(0, 0, 0, 0);
     const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff < 0) return { deadlineLabel: 'Overdue', deadlineCss: 'text-sm font-medium text-red-600' };
+    const abs = Math.abs(diff);
+    const days = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
+    if (diff < 0) return { deadlineLabel: `Overdue by ${days(abs)}`, deadlineCss: 'text-sm font-medium text-red-600' };
     if (diff === 0) return { deadlineLabel: 'Due today', deadlineCss: 'text-sm font-medium text-orange-500' };
-    if (diff <= 3) return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-sm font-medium text-amber-600' };
-    return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-sm font-medium text-green-600' };
+    if (diff <= 3) return { deadlineLabel: `${days(diff)} left`, deadlineCss: 'text-sm font-medium text-amber-600' };
+    return { deadlineLabel: `${days(diff)} left`, deadlineCss: 'text-sm font-medium text-green-600' };
   }
 }
