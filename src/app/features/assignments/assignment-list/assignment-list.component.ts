@@ -38,7 +38,7 @@ interface AssignmentRow extends Assignment {
       } @else if (assignments().length === 0) {
         <div class="lms-card text-center py-12">
           <mat-icon class="text-slate-300 mb-3">assignment</mat-icon>
-          <p class="text-slate-500">No assignments yet.</p>
+          <p class="text-slate-500">No assignments have been posted yet.</p>
         </div>
       } @else {
         <ul class="space-y-3">

@@ -82,6 +82,14 @@ describe('AssignmentListComponent', () => {
     expect(component.error()).toBe('Failed to load assignments.');
   });
 
+  it('shows the empty state message when the list is empty', () => {
+    fixture.detectChanges();
+    subject.next([]);
+    subject.complete();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No assignments have been posted yet.');
+  });
+
   describe('deadlineInfo', () => {
     beforeEach(() => fixture.detectChanges());
 

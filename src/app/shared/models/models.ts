@@ -153,7 +153,7 @@ export interface UpdateAssignmentRequest {
 
 export interface Submission {
   id: string;
-  assignmentId: string;
+  assignmentId?: string;
   studentName: string;
   status: SubmissionStatus;
   submittedAt: string;
