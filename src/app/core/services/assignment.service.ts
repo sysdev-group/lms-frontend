@@ -61,5 +61,4 @@ export class AssignmentService {
   updateAssignment(id: string, request: UpdateAssignmentRequest): Observable<Assignment> {
     return this.api.put<Assignment>(`/assignments/${id}`, request);
   }
-
 }

@@ -292,7 +292,7 @@ interface SubmissionRow extends Submission {
   `,
 })
 export class AssignmentDetailComponent implements OnInit {
-  isLoading = signal(false);
+  isLoading = signal(true);
   assignment = signal<Assignment | null>(null);
   mySubmission = signal<Submission | null>(null);
   allSubmissions = signal<SubmissionRow[]>([]);
@@ -326,6 +326,7 @@ export class AssignmentDetailComponent implements OnInit {
     if (this.authService.userRole() === 'Student') {
       this.loadStudentView();
     } else {
+      // Lecturer and Admin both use the submission table view
       this.loadLecturerView();
     }
   }
