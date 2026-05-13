@@ -52,7 +52,7 @@ interface AssignmentRow extends Assignment {
                     <p class="text-sm text-slate-500 mt-0.5">{{ a.courseName }}</p>
                   </div>
                   <div class="text-right shrink-0">
-                    <span class="text-sm font-medium" [class]="a.deadlineCss">
+                    <span [class]="a.deadlineCss">
                       {{ a.deadlineLabel }}
                     </span>
                     @if (userRole() === 'Lecturer' || userRole() === 'Admin') {
@@ -108,40 +108,9 @@ export class AssignmentListComponent implements OnInit {
     const due = new Date(deadline);
     due.setHours(0, 0, 0, 0);
     const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diff < 0) return { deadlineLabel: 'Overdue', deadlineCss: 'text-red-600' };
-    if (diff === 0) return { deadlineLabel: 'Due today', deadlineCss: 'text-orange-500' };
-    if (diff <= 3) return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-amber-600' };
-    return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-green-600' };
-  }
-}
-
-/**
- * Assignment detail page — submission form for students, grading view for lecturers.
- * TODO:
- *   1. Load assignment by :id
- *   2. Students: show file upload form + submit button
- *   3. Lecturers: show submissions table with grade inputs
- * See Section 7.5 + Section 7.6.
- */
-@Component({
-  selector: 'app-assignment-detail',
-  standalone: true,
-  imports: [],
-  template: `
-    <div class="page-container">
-      <div class="lms-card text-center py-12">
-        <h2 class="section-title">Assignment Detail</h2>
-        <p class="text-slate-500">
-          TODO: Students see submission form. Lecturers see grading panel.<br/>
-          Assignment ID: <strong>{{ assignmentId }}</strong>
-        </p>
-      </div>
-    </div>
-  `,
-})
-export class AssignmentDetailComponent {
-  assignmentId: string;
-  constructor(private route: ActivatedRoute) {
-    this.assignmentId = this.route.snapshot.paramMap.get('id') ?? '';
+    if (diff < 0) return { deadlineLabel: 'Overdue', deadlineCss: 'text-sm font-medium text-red-600' };
+    if (diff === 0) return { deadlineLabel: 'Due today', deadlineCss: 'text-sm font-medium text-orange-500' };
+    if (diff <= 3) return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-sm font-medium text-amber-600' };
+    return { deadlineLabel: `${diff} day${diff === 1 ? '' : 's'} left`, deadlineCss: 'text-sm font-medium text-green-600' };
   }
 }
