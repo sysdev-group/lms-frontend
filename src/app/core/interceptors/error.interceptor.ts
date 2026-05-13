@@ -1,7 +1,16 @@
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpContextToken } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+
+/**
+ * Set this token on a request to suppress the error snackbar.
+ * The error is still re-thrown so the caller can handle it.
+ *
+ * Usage:
+ *   this.http.post(url, body, { context: new HttpContext().set(SKIP_ERROR_SNACKBAR, true) })
+ */
+export const SKIP_ERROR_SNACKBAR = new HttpContextToken<boolean>(() => false);
 
 /**
  * Intercepts HTTP errors and shows user-friendly snackbar messages.
@@ -14,6 +23,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       // 401 is handled by authInterceptor — skip it here
       if (error.status === 401) return throwError(() => error);
+
+      // Caller opted out of the snackbar (e.g. forgot-password, which always
+      // shows a success state regardless of outcome to prevent user enumeration)
+      if (req.context.get(SKIP_ERROR_SNACKBAR)) return throwError(() => error);
 
       const message = getErrorMessage(error);
       snackBar.open(message, 'Dismiss', {
