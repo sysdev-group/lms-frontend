@@ -1,8 +1,9 @@
-import { Component, computed, signal } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, signal, OnDestroy } from '@angular/core';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { AuthService } from '@core/auth/auth.service';
 
 @Component({
@@ -10,7 +11,7 @@ import { AuthService } from '@core/auth/auth.service';
   standalone: true,
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
-    MatIconModule, MatButtonModule, MatToolbarModule,
+    MatIconModule, MatButtonModule,
   ],
   template: `
     <div class="flex h-screen bg-slate-100">
@@ -22,10 +23,6 @@ import { AuthService } from '@core/auth/auth.service';
       }
 
       <!-- ── Sidebar ──────────────────────────────────────────────────── -->
-      <!--
-        Mobile:  fixed, off-screen by default (-translate-x-full), slides in when open.
-        Desktop: relative, always visible (lg:translate-x-0 overrides any translate).
-      -->
       <aside [class]="sidebarClass()">
 
         <!-- Logo + close button (close only visible on mobile) -->
@@ -44,7 +41,6 @@ import { AuthService } from '@core/auth/auth.service';
           @for (item of navItems(); track item.path) {
             <a [routerLink]="item.path"
                routerLinkActive="bg-primary-50 text-primary-700 font-medium"
-               (click)="sidebarOpen.set(false)"
                class="flex items-center gap-3 px-3 py-3 rounded-lg text-slate-600
                       hover:bg-slate-50 hover:text-slate-800 transition-colors
                       text-sm min-h-[44px]">
@@ -76,7 +72,7 @@ import { AuthService } from '@core/auth/auth.service';
       </aside>
 
       <!-- ── Main content column ────────────────────────────────────────── -->
-      <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div class="flex flex-col flex-1 min-w-0 overflow-x-hidden">
 
         <!-- Mobile top bar (hamburger + logo; hidden on desktop) -->
         <div class="flex items-center h-14 px-3 bg-white border-b border-slate-200
@@ -98,13 +94,22 @@ import { AuthService } from '@core/auth/auth.service';
     </div>
   `,
 })
-export class ShellComponent {
-  constructor(private authService: AuthService) {}
+export class ShellComponent implements OnDestroy {
+  private routerSub: Subscription;
+
+  constructor(private authService: AuthService, private router: Router) {
+    this.routerSub = this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => this.sidebarOpen.set(false));
+  }
+
+  ngOnDestroy(): void {
+    this.routerSub.unsubscribe();
+  }
 
   sidebarOpen = signal(false);
 
-  /** Full class string for the sidebar element.
-   *  Computed so Tailwind sees all class names as string literals and purges correctly. */
+  /** Computed so Tailwind's scanner sees all class names as string literals. */
   sidebarClass = computed(() =>
     'fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-white border-r border-slate-200 ' +
     'transition-transform duration-300 ease-in-out ' +
@@ -112,8 +117,8 @@ export class ShellComponent {
     (this.sidebarOpen() ? 'translate-x-0' : '-translate-x-full')
   );
 
-  userName    = computed(() => this.authService.currentUser()?.fullName ?? '');
-  userRole    = computed(() => this.authService.currentUser()?.role ?? '');
+  userName     = computed(() => this.authService.currentUser()?.fullName ?? '');
+  userRole     = computed(() => this.authService.currentUser()?.role ?? '');
   userInitials = computed(() => {
     const name = this.authService.currentUser()?.fullName ?? '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
