@@ -5,23 +5,22 @@ import {
   Assignment,
   CreateAssignmentRequest,
   UpdateAssignmentRequest,
-  Submission,
-  GradeSubmissionRequest,
 } from '@shared/models/models';
 
 /**
  * Assignment service — Section 7.5 (Assignment Module) and Section 25.5 (API routes).
  *
  * Routes:
- *   GET  /assignments                    — list all assignments, optionally filtered by courseId
- *   GET  /assignments/:id                — single assignment by ID
- *   POST /assignments                    — create an assignment (Lecturer only)
- *   PUT  /assignments/:id                — update an assignment (Lecturer only)
- *   PUT  /assignments/:submissionId/grade — grade a submission (Lecturer only)
+ *   GET  /assignments      — list all assignments, optionally filtered by courseId
+ *   GET  /assignments/:id  — single assignment by ID
+ *   POST /assignments      — create an assignment (Lecturer only)
+ *   PUT  /assignments/:id  — update an assignment (Lecturer only)
  *
  * Previously the assignment list method was named getAssignmentsByCourse with a required
  * courseId parameter. It is now getAssignments with an optional courseId so the same
  * method covers both the "all assignments" and "by course" use cases.
+ *
+ * Grading is handled by GradeService (PUT /grades/:submissionId), not this service.
  */
 @Injectable({ providedIn: 'root' })
 export class AssignmentService {
@@ -63,19 +62,4 @@ export class AssignmentService {
     return this.api.put<Assignment>(`/assignments/${id}`, request);
   }
 
-  /**
-   * Grade a student submission. Lecturer role required.
-   *
-   * Route: PUT /assignments/:submissionId/grade (Section 25.5).
-   * The path segment is the submission UUID — the route is namespaced under
-   * /assignments because grading is an assignment-owned action, but the ID
-   * passed here identifies the specific submission being graded, not the
-   * parent assignment.
-   *
-   * @param submissionId The submission UUID to grade.
-   * @param request Marks and optional feedback.
-   */
-  gradeSubmission(submissionId: string, request: GradeSubmissionRequest): Observable<Submission> {
-    return this.api.put<Submission>(`/assignments/${submissionId}/grade`, request);
-  }
 }
