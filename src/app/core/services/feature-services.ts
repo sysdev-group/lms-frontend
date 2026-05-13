@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { ApiService } from '@core/services/api.service';
 import { PaginatedResult } from '@shared/models/api-response.model';
 import {
-  User, CreateUserRequest, UpdateUserRequest, UserQueryParams,
+  User,
   Course, CreateCourseRequest, UpdateCourseRequest, CourseQueryParams,
   Assignment, CreateAssignmentRequest, UpdateAssignmentRequest,
   Submission, CreateSubmissionRequest, GradeSubmissionRequest,
@@ -30,38 +30,6 @@ import {
   TimetableSession, CreateSessionRequest,
   AttendanceRecord, MarkAttendanceRequest, StudentAttendanceSummary,
 } from '@shared/models/models';
-
-// ─── USER SERVICE ─────────────────────────────────────────────────────────────
-/** Docs: Section 7.3 — User Management Module */
-@Injectable({ providedIn: 'root' })
-export class UserService {
-  constructor(private api: ApiService) {}
-
-  getUsers(params?: UserQueryParams): Observable<PaginatedResult<User>> {
-    // TODO: return this.api.get<PaginatedResult<User>>('/users', params as any);
-    throw new Error('UserService.getUsers — not yet implemented');
-  }
-
-  getUserById(id: string): Observable<User> {
-    // TODO: return this.api.get<User>(`/users/${id}`);
-    throw new Error('UserService.getUserById — not yet implemented');
-  }
-
-  createUser(request: CreateUserRequest): Observable<User> {
-    // TODO: return this.api.post<User>('/users', request);
-    throw new Error('UserService.createUser — not yet implemented');
-  }
-
-  updateUser(id: string, request: UpdateUserRequest): Observable<User> {
-    // TODO: return this.api.put<User>(`/users/${id}`, request);
-    throw new Error('UserService.updateUser — not yet implemented');
-  }
-
-  deactivateUser(id: string): Observable<void> {
-    // TODO: return this.api.delete(`/users/${id}`);
-    throw new Error('UserService.deactivateUser — not yet implemented');
-  }
-}
 
 // ─── COURSE SERVICE ───────────────────────────────────────────────────────────
 /** Docs: Section 7.4 — Course Module */

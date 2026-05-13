@@ -80,6 +80,12 @@ export interface UserQueryParams {
   pageSize?: number;
 }
 
+export interface BulkImportResult {
+  successCount: number;
+  failureCount: number;
+  errors: { row: number; message: string }[];
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export interface Course {
