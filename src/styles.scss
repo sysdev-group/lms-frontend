@@ -1,15 +1,16 @@
+// ─── Angular Material theme ───────────────────────────────────────────────────
+// @use must come before all other rules in SCSS
+@use "@angular/material" as mat;
+
 // ─── Tailwind directives ──────────────────────────────────────────────────────
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-// ─── Angular Material theme ───────────────────────────────────────────────────
-@use "@angular/material" as mat;
-
 @include mat.core();
 
 $lms-primary: mat.define-palette(mat.$blue-palette, 600);
-$lms-accent:  mat.define-palette(mat.$violet-palette, 500);
+$lms-accent:  mat.define-palette(mat.$deep-purple-palette, 500);
 $lms-warn:    mat.define-palette(mat.$red-palette);
 
 $lms-theme: mat.define-light-theme((

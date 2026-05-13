@@ -14,11 +14,8 @@ import { ActivatedRoute } from '@angular/router';
   template: `
     <div class="page-container">
       <h1 class="section-title">Assignments</h1>
-      <div class="lms-card text-center py-12">
-        <p class="text-slate-500">
-          TODO: List assignments with deadlines.<br/>
-          Use <code>AssignmentService.getAssignmentsByCourse()</code>.
-        </p>
+      <div class="lms-card text-center py-16">
+        <p class="text-slate-400 text-sm">No assignments available yet.</p>
       </div>
     </div>
   `,
@@ -40,11 +37,8 @@ export class AssignmentListComponent {}
   template: `
     <div class="page-container">
       <div class="lms-card text-center py-12">
-        <h2 class="section-title">Assignment Detail</h2>
-        <p class="text-slate-500">
-          TODO: Students see submission form. Lecturers see grading panel.<br/>
-          Assignment ID: <strong>{{ assignmentId }}</strong>
-        </p>
+        <h1 class="section-title">Assignment Detail</h1>
+        <p class="text-slate-400 text-sm">Assignment information is not yet available.</p>
       </div>
     </div>
   `,

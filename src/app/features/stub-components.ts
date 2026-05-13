@@ -15,16 +15,12 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '@core/auth/auth.service';
 
 // ─── Shared stub template ─────────────────────────────────────────────────────
-function stubTemplate(title: string, docsSection: string, hint: string): string {
+function stubTemplate(title: string): string {
   return `
     <div class="page-container">
-      <div class="lms-card text-center py-12">
-        <h2 class="section-title">${title}</h2>
-        <p class="text-slate-500 max-w-md mx-auto">
-          This page is not yet implemented.<br/>
-          Docs: <strong>${docsSection}</strong><br/>
-          ${hint}
-        </p>
+      <h1 class="section-title">${title}</h1>
+      <div class="lms-card text-center py-16">
+        <p class="text-slate-400 text-sm">This section is not yet available.</p>
       </div>
     </div>
   `;
@@ -44,14 +40,17 @@ function stubTemplate(title: string, docsSection: string, hint: string): string 
     <div class="page-container">
       <h1 class="section-title">Dashboard</h1>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="lms-card">
-          <p class="text-slate-500 text-sm">TODO: Upcoming deadlines widget. See Section 7.9.</p>
+        <div class="lms-card text-center py-8">
+          <p class="text-sm font-medium text-slate-700 mb-1">Upcoming Deadlines</p>
+          <p class="text-slate-400 text-sm">No deadlines to show.</p>
         </div>
-        <div class="lms-card">
-          <p class="text-slate-500 text-sm">TODO: Enrolled courses summary. See Section 7.9.</p>
+        <div class="lms-card text-center py-8">
+          <p class="text-sm font-medium text-slate-700 mb-1">Enrolled Courses</p>
+          <p class="text-slate-400 text-sm">No courses enrolled.</p>
         </div>
-        <div class="lms-card">
-          <p class="text-slate-500 text-sm">TODO: Recent notifications. See Section 7.7.</p>
+        <div class="lms-card text-center py-8">
+          <p class="text-sm font-medium text-slate-700 mb-1">Notifications</p>
+          <p class="text-slate-400 text-sm">No new notifications.</p>
         </div>
       </div>
     </div>
@@ -68,7 +67,7 @@ export class DashboardComponent {}
   selector: 'app-grades',
   standalone: true,
   imports: [],
-  template: stubTemplate('Grades', 'Section 7.6 + Section 27', 'Inject GradeService. Students see published grades only.'),
+  template: stubTemplate('Grades'),
 })
 export class GradesComponent {}
 
@@ -81,7 +80,7 @@ export class GradesComponent {}
   selector: 'app-timetable',
   standalone: true,
   imports: [],
-  template: stubTemplate('Timetable', 'Section 24', 'Inject TimetableService. Render as a weekly grid.'),
+  template: stubTemplate('Timetable'),
 })
 export class TimetableComponent {}
 
@@ -94,7 +93,7 @@ export class TimetableComponent {}
   selector: 'app-attendance',
   standalone: true,
   imports: [],
-  template: stubTemplate('Attendance', 'Section 26', 'Role-aware: student view shows percentage; lecturer view shows mark-attendance form.'),
+  template: stubTemplate('Attendance'),
 })
 export class AttendanceComponent {}
 
@@ -107,7 +106,7 @@ export class AttendanceComponent {}
   selector: 'app-notifications',
   standalone: true,
   imports: [],
-  template: stubTemplate('Notifications', 'Section 7.7 + Section 23', 'Inject NotificationService. Show unread count badge in sidebar.'),
+  template: stubTemplate('Notifications'),
 })
 export class NotificationsComponent {}
 
@@ -120,6 +119,6 @@ export class NotificationsComponent {}
   selector: 'app-enrollment',
   standalone: true,
   imports: [],
-  template: stubTemplate('Enrollment', 'Section 28', 'Admin only. Inject EnrollmentService. Supports bulk CSV enrollment.'),
+  template: stubTemplate('Enrollment'),
 })
 export class EnrollmentComponent {}

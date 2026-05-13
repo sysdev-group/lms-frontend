@@ -1,6 +1,4 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
 
 /**
  * Course list page.
@@ -15,20 +13,15 @@ import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'app-course-list',
   standalone: true,
-  imports: [RouterLink, MatButtonModule],
+  imports: [],
   template: `
     <div class="page-container">
       <div class="flex items-center justify-between mb-6">
         <h1 class="section-title mb-0">Courses</h1>
-        <!-- TODO: Show only for Admin/Lecturer -->
-        <button mat-flat-button color="primary">+ Create Course</button>
       </div>
 
-      <div class="lms-card text-center py-12">
-        <p class="text-slate-500">
-          TODO: Render course cards here.<br/>
-          Inject <code>CourseService</code> and call <code>getCourses()</code>.
-        </p>
+      <div class="lms-card text-center py-16">
+        <p class="text-slate-400 text-sm">No courses available yet.</p>
       </div>
     </div>
   `,

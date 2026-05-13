@@ -16,12 +16,9 @@ import { ActivatedRoute } from '@angular/router';
   imports: [],
   template: `
     <div class="page-container">
-      <div class="lms-card text-center py-12">
-        <h2 class="section-title">Course Detail</h2>
-        <p class="text-slate-500">
-          TODO: Load course by ID from route params.<br/>
-          Show Materials, Assignments, and Students tabs.
-        </p>
+      <div class="lms-card text-center py-16">
+        <h1 class="section-title">Course Detail</h1>
+        <p class="text-slate-400 text-sm">Course information is not yet available.</p>
       </div>
     </div>
   `,
