@@ -48,6 +48,10 @@ import { User } from '@shared/models/models';
           </div>
           <p class="text-slate-400 text-sm">Full user editing is coming soon.</p>
         </div>
+      } @else {
+        <div class="lms-card text-center py-12">
+          <p class="text-slate-400 text-sm">User not found.</p>
+        </div>
       }
 
     </div>
@@ -58,7 +62,7 @@ export class UserDetailComponent implements OnInit {
   user = signal<User | null>(null);
   error = signal<string | null>(null);
 
-  private userId: string;
+  private readonly userId: string;
 
   constructor(private route: ActivatedRoute, private userService: UserService) {
     this.userId = this.route.snapshot.paramMap.get('id') ?? '';

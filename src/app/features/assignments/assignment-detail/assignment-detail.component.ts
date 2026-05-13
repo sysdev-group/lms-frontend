@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -22,9 +22,4 @@ import { MatIconModule } from '@angular/material/icon';
     </div>
   `,
 })
-export class AssignmentDetailComponent {
-  assignmentId: string;
-  constructor(private route: ActivatedRoute) {
-    this.assignmentId = this.route.snapshot.paramMap.get('id') ?? '';
-  }
-}
+export class AssignmentDetailComponent {}

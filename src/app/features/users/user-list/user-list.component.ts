@@ -157,7 +157,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
   page = signal(0);
   pageSize = signal(20);
-  displayedColumns = ['name', 'email', 'role', 'status', 'actions'];
+  readonly displayedColumns = ['name', 'email', 'role', 'status', 'actions'];
 
   private destroy$ = new Subject<void>();
 
