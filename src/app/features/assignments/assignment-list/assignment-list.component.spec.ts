@@ -88,14 +88,14 @@ describe('AssignmentListComponent', () => {
     it('returns "Overdue" and red class for a past deadline', () => {
       const info = (component as any).deadlineInfo('2000-01-01');
       expect(info.deadlineLabel).toBe('Overdue');
-      expect(info.deadlineCss).toBe('text-red-600');
+      expect(info.deadlineCss).toBe('text-sm font-medium text-red-600');
     });
 
     it('returns "Due today" and orange class for today\'s date', () => {
       const today = new Date().toISOString().split('T')[0];
       const info = (component as any).deadlineInfo(today);
       expect(info.deadlineLabel).toBe('Due today');
-      expect(info.deadlineCss).toBe('text-orange-500');
+      expect(info.deadlineCss).toBe('text-sm font-medium text-orange-500');
     });
 
     it('returns amber class for a deadline within 3 days', () => {
@@ -103,12 +103,12 @@ describe('AssignmentListComponent', () => {
       soon.setDate(soon.getDate() + 2);
       const info = (component as any).deadlineInfo(soon.toISOString().split('T')[0]);
       expect(info.deadlineLabel).toBe('2 days left');
-      expect(info.deadlineCss).toBe('text-amber-600');
+      expect(info.deadlineCss).toBe('text-sm font-medium text-amber-600');
     });
 
     it('returns green class for a deadline beyond 3 days', () => {
       const info = (component as any).deadlineInfo('2099-12-31');
-      expect(info.deadlineCss).toBe('text-green-600');
+      expect(info.deadlineCss).toBe('text-sm font-medium text-green-600');
       expect(info.deadlineLabel).toContain('days left');
     });
 
@@ -117,7 +117,7 @@ describe('AssignmentListComponent', () => {
       subject.complete();
       const row = component.assignments()[0];
       expect(row.deadlineLabel).toBe('Overdue');
-      expect(row.deadlineCss).toBe('text-red-600');
+      expect(row.deadlineCss).toBe('text-sm font-medium text-red-600');
     });
   });
 });
