@@ -412,28 +412,51 @@ export class AssignmentDetailComponent implements OnInit {
   }
 
   private loadLecturerView(): void {
-    forkJoin([
-      this.assignmentService.getAssignmentById(this.assignmentId),
-      this.submissionService.getByAssignment(this.assignmentId),
-    ]).pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: ([assignment, submissions]) => {
-          this.assignment.set(assignment);
-          this.deadlineInfo.set(this.buildDeadlineInfo(assignment.deadline));
-          this.allSubmissions.set(submissions.map(s => this.toSubmissionRow(s, assignment.maxMarks)));
-          this.isLoading.set(false);
-        },
-        error: (err) => {
-          this.error.set(err?.error?.message ?? 'Failed to load assignment.');
-          this.isLoading.set(false);
-        },
-      });
+    this.assignmentService.getAssignmentById(this.assignmentId).pipe(
+      switchMap(assignment => {
+        const grades$ = assignment.courseId
+          ? this.gradeService.getGradesByCourse(assignment.courseId)
+              .pipe(catchError(() => of<Grade[]>([])))
+          : of<Grade[]>([]);
+        return forkJoin({
+          assignment: of(assignment),
+          submissions: this.submissionService.getByAssignment(this.assignmentId),
+          grades: grades$,
+        });
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: ({ assignment, submissions, grades }) => {
+        this.assignment.set(assignment);
+        this.deadlineInfo.set(this.buildDeadlineInfo(assignment.deadline));
+        const gradeMap = new Map<string, string>(
+          grades
+            .filter((g): g is Grade & { studentId: string } =>
+              g.studentId !== undefined && g.assignmentTitle === assignment.title)
+            .map(g => [g.studentId, g.id]),
+        );
+        this.allSubmissions.set(
+          submissions.map(s =>
+            this.toSubmissionRow(
+              s,
+              assignment.maxMarks,
+              s.studentId ? (gradeMap.get(s.studentId) ?? null) : null,
+            )
+          )
+        );
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Failed to load assignment.');
+        this.isLoading.set(false);
+      },
+    });
   }
 
-  private toSubmissionRow(s: Submission, maxMarks: number): SubmissionRow {
+  private toSubmissionRow(s: Submission, maxMarks: number, gradeId: string | null = null): SubmissionRow {
     return {
       ...s,
-      gradeId: null,
+      gradeId,
       gradeForm: this.fb.group({
         marks: [null, [Validators.required, Validators.min(0), Validators.max(maxMarks)]],
         feedback: [''],
