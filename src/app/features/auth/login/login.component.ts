@@ -32,75 +32,89 @@ import { AuthService } from '@core/auth/auth.service';
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-slate-100 px-4">
-      <div class="w-full max-w-md">
+    <div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+      <div class="w-full max-w-sm">
 
         <!-- Logo / Title -->
         <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 mb-4">
-            <mat-icon class="text-white text-3xl">school</mat-icon>
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 mb-4 shadow-md">
+            <mat-icon style="font-size:32px;width:32px;height:32px;color:white">school</mat-icon>
           </div>
           <h1 class="text-2xl font-bold text-slate-800">Modern Modular LMS</h1>
-          <p class="text-slate-500 mt-1">Sign in to your account</p>
+          <p class="text-slate-500 mt-1 text-sm">Sign in to your account</p>
         </div>
 
         <!-- Card -->
-        <div class="lms-card">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
 
             <!-- Error message -->
             @if (errorMessage()) {
-              <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
+              <div class="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+                <mat-icon style="font-size:18px;width:18px;height:18px" class="text-red-500 shrink-0">error_outline</mat-icon>
                 <p class="text-sm text-red-700">{{ errorMessage() }}</p>
               </div>
             }
 
             <!-- Email -->
-            <mat-form-field class="w-full mb-2" appearance="outline">
-              <mat-label>Email address</mat-label>
-              <mat-icon matPrefix class="mr-2 text-slate-400">email</mat-icon>
-              <input matInput type="email" formControlName="email" autocomplete="email" />
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
+              <div class="relative">
+                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  style="font-size:20px;width:20px;height:20px">email</mat-icon>
+                <input type="email" formControlName="email" autocomplete="email"
+                  placeholder="you@example.com"
+                  class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm
+                         text-slate-800 placeholder-slate-400 bg-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+              </div>
               @if (loginForm.get('email')?.hasError('required') && loginForm.get('email')?.touched) {
-                <mat-error>Email is required</mat-error>
+                <p class="mt-1 text-xs text-red-600">Email is required</p>
               }
-              @if (loginForm.get('email')?.hasError('email')) {
-                <mat-error>Enter a valid email address</mat-error>
+              @if (loginForm.get('email')?.hasError('email') && loginForm.get('email')?.touched) {
+                <p class="mt-1 text-xs text-red-600">Enter a valid email address</p>
               }
-            </mat-form-field>
+            </div>
 
             <!-- Password -->
-            <mat-form-field class="w-full mb-4" appearance="outline">
-              <mat-label>Password</mat-label>
-              <mat-icon matPrefix class="mr-2 text-slate-400">lock</mat-icon>
-              <input matInput
-                [type]="showPassword() ? 'text' : 'password'"
-                formControlName="password"
-                autocomplete="current-password" />
-              <button mat-icon-button matSuffix type="button"
-                (click)="showPassword.set(!showPassword())"
-                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-                <mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
+            <div class="mb-5">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+              <div class="relative">
+                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  style="font-size:20px;width:20px;height:20px">lock</mat-icon>
+                <input [type]="showPassword() ? 'text' : 'password'"
+                  formControlName="password" autocomplete="current-password"
+                  placeholder="••••••••"
+                  class="w-full pl-10 pr-12 py-2.5 border border-slate-300 rounded-lg text-sm
+                         text-slate-800 placeholder-slate-400 bg-white
+                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                <button type="button" (click)="showPassword.set(!showPassword())"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+                  <mat-icon style="font-size:20px;width:20px;height:20px">
+                    {{ showPassword() ? 'visibility_off' : 'visibility' }}
+                  </mat-icon>
+                </button>
+              </div>
               @if (loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched) {
-                <mat-error>Password is required</mat-error>
+                <p class="mt-1 text-xs text-red-600">Password is required</p>
               }
-            </mat-form-field>
+            </div>
 
-            <!-- Forgot password link -->
+            <!-- Forgot password -->
             <div class="text-right mb-6">
               <a routerLink="/auth/forgot-password"
-                class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                class="text-sm text-blue-600 hover:text-blue-700 font-medium transition">
                 Forgot your password?
               </a>
             </div>
 
             <!-- Submit -->
-            <button mat-raised-button color="primary"
-              type="submit"
-              class="w-full h-11"
-              [disabled]="isLoading()">
+            <button type="submit" [disabled]="isLoading()"
+              class="w-full py-2.5 px-4 rounded-lg font-semibold text-sm text-white transition
+                     flex items-center justify-center gap-2
+                     bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
               @if (isLoading()) {
-                <mat-spinner diameter="20" class="inline-block mr-2" />
+                <mat-spinner diameter="18" />
                 Signing in...
               } @else {
                 Sign in
