@@ -3,9 +3,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AssignmentService } from '@core/services/assignment.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Assignment } from '@shared/models/models';
+import { AssignmentCreateDialogComponent } from '../assignment-create-dialog/assignment-create-dialog.component';
 
 interface AssignmentRow extends Assignment {
   readonly deadlineLabel: string;
@@ -21,10 +25,16 @@ interface AssignmentRow extends Assignment {
 @Component({
   selector: 'app-assignment-list',
   standalone: true,
-  imports: [RouterLink, MatProgressSpinnerModule, MatIconModule],
+  imports: [RouterLink, MatProgressSpinnerModule, MatIconModule, MatButtonModule, MatDialogModule, MatSnackBarModule],
   template: `
     <div class="page-container">
-      <h1 class="section-title">Assignments</h1>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="section-title mb-0">Assignments</h1>
+        @if (userRole() === 'Lecturer' || userRole() === 'Admin') {
+          <button mat-flat-button color="primary" class="min-h-[44px]"
+            (click)="openCreateDialog()">+ Create Assignment</button>
+        }
+      </div>
 
       @if (isLoading()) {
         <div class="flex justify-center py-16">
@@ -77,7 +87,11 @@ export class AssignmentListComponent implements OnInit {
 
   readonly userRole = this.authService.userRole;
 
+  private courseId: string | undefined;
+
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   constructor(
     private route: ActivatedRoute,
@@ -86,16 +100,31 @@ export class AssignmentListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const courseId = this.route.snapshot.queryParamMap.get('courseId') ?? undefined;
+    this.courseId = this.route.snapshot.queryParamMap.get('courseId') ?? undefined;
+    this.loadAssignments();
+  }
+
+  openCreateDialog(): void {
+    const ref = this.dialog.open(AssignmentCreateDialogComponent, { width: '520px' });
+    ref.afterClosed().subscribe((created: boolean) => {
+      if (created) {
+        this.snackBar.open('Assignment created successfully.', 'Dismiss', { duration: 4000 });
+        this.loadAssignments();
+      }
+    });
+  }
+
+  private loadAssignments(): void {
     this.isLoading.set(true);
-    this.assignmentService.getAssignments(courseId)
+    this.error.set(null);
+    this.assignmentService.getAssignments(this.courseId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.assignments.set(data.map(a => ({ ...a, ...this.deadlineInfo(a.deadline) })));
           this.isLoading.set(false);
         },
-        error: (err) => {
+        error: (err: { error?: { message?: string } }) => {
           this.error.set(err?.error?.message ?? 'Failed to load assignments.');
           this.isLoading.set(false);
         },
