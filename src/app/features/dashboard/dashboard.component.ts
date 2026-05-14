@@ -171,13 +171,12 @@ import { PaginatedResult } from '@shared/models/api-response.model';
               </a>
             </div>
 
-            <!-- Recent activity (static placeholder) -->
-            <div class="lms-card">
-              <div class="flex items-center gap-2 mb-3">
-                <mat-icon class="text-slate-400">history</mat-icon>
-                <p class="text-sm font-semibold text-slate-700">Recent Activity</p>
-              </div>
-              <p class="text-slate-400 text-sm">Audit log coming soon.</p>
+            <!-- Activity Log -->
+            <div class="lms-card text-center py-6">
+              <mat-icon class="text-slate-500 mb-2">history</mat-icon>
+              <p class="text-sm font-semibold text-slate-700 mt-1">Activity Log</p>
+              <p class="text-sm text-slate-500 mt-1">View all system activity and user actions</p>
+              <a routerLink="/audit" mat-button color="primary" class="mt-3 block text-sm">View Activity Log</a>
             </div>
           </div>
 
