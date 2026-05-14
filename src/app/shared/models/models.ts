@@ -143,6 +143,7 @@ export interface CourseQueryParams {
 
 export interface Assignment {
   id: string;
+  courseId?: string;
   title: string;
   description: string | null;
   deadline: string;
@@ -175,6 +176,7 @@ export interface UpdateAssignmentRequest {
 export interface Submission {
   id: string;
   assignmentId?: string;
+  studentId?: string;
   studentName: string;
   status: SubmissionStatus;
   submittedAt: string;
@@ -197,6 +199,7 @@ export interface GradeSubmissionRequest {
 
 export interface Grade {
   id: string;
+  studentId?: string;
   marksAwarded: number;
   letterGrade: string | null;
   gradePoints: number | null;
