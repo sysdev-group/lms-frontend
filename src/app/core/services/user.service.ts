@@ -2,35 +2,53 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from '@core/services/api.service';
 import { PaginatedResult } from '@shared/models/api-response.model';
-import { User, CreateUserRequest, UpdateUserRequest, UserQueryParams } from '@shared/models/models';
+import {
+  User,
+  CreateUserRequest,
+  UpdateUserRequest,
+  UserQueryParams,
+  BulkImportResult,
+} from '@shared/models/models';
 
-/** User management service — Section 7.3. */
+/** Docs: Section 7.3 — User Management Module */
 @Injectable({ providedIn: 'root' })
 export class UserService {
+  private readonly base = '/users';
+
   constructor(private api: ApiService) {}
 
-  /** Fetch paginated, filtered list of users. */
+  /** Returns a paginated, filtered list of users. */
   getUsers(params?: UserQueryParams): Observable<PaginatedResult<User>> {
-    return this.api.get<PaginatedResult<User>>('/users', params as unknown as Record<string, string | number | boolean>);
+    return this.api.get<PaginatedResult<User>>(
+      this.base,
+      params as unknown as Record<string, string | number | boolean>,
+    );
   }
 
-  /** Fetch a single user by ID. */
+  /** Returns a single user by ID. Throws 404 if not found. */
   getUserById(id: string): Observable<User> {
-    return this.api.get<User>(`/users/${id}`);
+    return this.api.get<User>(`${this.base}/${id}`);
   }
 
-  /** Create a new user account. */
+  /** Creates a new user. The backend auto-generates and emails the initial password. */
   createUser(request: CreateUserRequest): Observable<User> {
-    return this.api.post<User>('/users', request);
+    return this.api.post<User>(this.base, request);
   }
 
-  /** Update user name, role, or status. */
+  /** Partially updates a user's profile fields. */
   updateUser(id: string, request: UpdateUserRequest): Observable<User> {
-    return this.api.put<User>(`/users/${id}`, request);
+    return this.api.put<User>(`${this.base}/${id}`, request);
   }
 
-  /** Soft-delete (deactivate) a user account. */
+  /** Soft-deletes (deactivates) a user — sets isActive to false on the backend. */
   deactivateUser(id: string): Observable<void> {
-    return this.api.delete<void>(`/users/${id}`);
+    return this.api.delete<void>(`${this.base}/${id}`);
+  }
+
+  /** Uploads a CSV file and bulk-creates users. Returns per-row success/failure counts. */
+  bulkImport(csvFile: File): Observable<BulkImportResult> {
+    const formData = new FormData();
+    formData.append('file', csvFile);
+    return this.api.post<BulkImportResult>(`${this.base}/bulk-import`, formData);
   }
 }
