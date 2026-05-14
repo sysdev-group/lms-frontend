@@ -58,8 +58,8 @@ import { AuthService } from '@core/auth/auth.service';
             <!-- Email -->
             <mat-form-field class="w-full mb-2" appearance="outline">
               <mat-label>Email address</mat-label>
-              <input matInput type="email" formControlName="email" autocomplete="email" />
               <mat-icon matPrefix class="mr-2 text-slate-400">email</mat-icon>
+              <input matInput type="email" formControlName="email" autocomplete="email" />
               @if (loginForm.get('email')?.hasError('required') && loginForm.get('email')?.touched) {
                 <mat-error>Email is required</mat-error>
               }
@@ -71,11 +71,11 @@ import { AuthService } from '@core/auth/auth.service';
             <!-- Password -->
             <mat-form-field class="w-full mb-4" appearance="outline">
               <mat-label>Password</mat-label>
+              <mat-icon matPrefix class="mr-2 text-slate-400">lock</mat-icon>
               <input matInput
                 [type]="showPassword() ? 'text' : 'password'"
                 formControlName="password"
                 autocomplete="current-password" />
-              <mat-icon matPrefix class="mr-2 text-slate-400">lock</mat-icon>
               <button mat-icon-button matSuffix type="button"
                 (click)="showPassword.set(!showPassword())"
                 [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
@@ -95,10 +95,10 @@ import { AuthService } from '@core/auth/auth.service';
             </div>
 
             <!-- Submit -->
-            <button mat-flat-button color="primary"
+            <button mat-raised-button color="primary"
               type="submit"
               class="w-full h-11"
-              [disabled]="isLoading() || loginForm.invalid">
+              [disabled]="isLoading()">
               @if (isLoading()) {
                 <mat-spinner diameter="20" class="inline-block mr-2" />
                 Signing in...
