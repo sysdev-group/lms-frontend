@@ -9,9 +9,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { CourseService } from '@core/services/course.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Course } from '@shared/models/models';
+import { CourseCreateDialogComponent } from '../course-create-dialog/course-create-dialog.component';
 
 @Component({
   selector: 'app-course-list',
@@ -25,6 +27,7 @@ import { Course } from '@shared/models/models';
     MatInputModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatDialogModule,
   ],
   template: `
     <div class="page-container">
@@ -32,7 +35,7 @@ import { Course } from '@shared/models/models';
         <h1 class="section-title mb-0">Courses</h1>
         @if (canManageCourses()) {
           <button mat-flat-button color="primary" class="min-h-[44px]"
-            routerLink="/courses/new">+ Create Course</button>
+            (click)="openCreateDialog()">+ Create Course</button>
         }
       </div>
 
@@ -94,6 +97,7 @@ export class CourseListComponent implements OnInit {
   private readonly courseService = inject(CourseService);
   private readonly authService = inject(AuthService);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly dialog = inject(MatDialog);
 
   ngOnInit(): void {
     this.loadCourses();
@@ -105,6 +109,16 @@ export class CourseListComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(search => this.loadCourses(search ?? undefined));
+  }
+
+  openCreateDialog(): void {
+    const ref = this.dialog.open(CourseCreateDialogComponent, { width: '480px' });
+    ref.afterClosed().subscribe((created: boolean) => {
+      if (created) {
+        this.snackBar.open('Course created successfully.', 'Dismiss', { duration: 4000 });
+        this.loadCourses(this.searchControl.value ?? undefined);
+      }
+    });
   }
 
   navigateToCourse(id: string): void {

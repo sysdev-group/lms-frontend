@@ -118,9 +118,10 @@ export interface CreateCourseRequest {
   code: string;
   title: string;
   description?: string;
-  lecturerId: string;
-  semesterId: string;
-  creditHours: number;
+  maxStudents?: number;
+  lecturerId?: string;
+  semesterId?: string;
+  creditHours?: number;
 }
 
 export interface UpdateCourseRequest {
