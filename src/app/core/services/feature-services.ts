@@ -27,7 +27,6 @@ import {
   Grade,
   Notification, SendNotificationRequest,
   Enrollment, EnrollStudentRequest,
-  AttendanceRecord, MarkAttendanceRequest, StudentAttendanceSummary,
 } from '@shared/models/models';
 
 // ─── COURSE SERVICE ───────────────────────────────────────────────────────────
@@ -179,22 +178,5 @@ export class EnrollmentService {
   getMyEnrollments(): Observable<Enrollment[]> {
     // TODO: return this.api.get<Enrollment[]>('/enrollment/student/me');
     throw new Error('EnrollmentService.getMyEnrollments — not yet implemented');
-  }
-}
-
-// ─── ATTENDANCE SERVICE ───────────────────────────────────────────────────────
-/** Docs: Section 26 — Attendance Management Module */
-@Injectable({ providedIn: 'root' })
-export class AttendanceService {
-  constructor(private api: ApiService) {}
-
-  markAttendance(sessionId: string, request: MarkAttendanceRequest): Observable<void> {
-    // TODO: return this.api.post<void>(`/attendance/session/${sessionId}`, request);
-    throw new Error('AttendanceService.markAttendance — not yet implemented');
-  }
-
-  getMyAttendanceSummary(): Observable<StudentAttendanceSummary[]> {
-    // TODO: return this.api.get<StudentAttendanceSummary[]>('/attendance/student/me');
-    throw new Error('AttendanceService.getMyAttendanceSummary — not yet implemented');
   }
 }
