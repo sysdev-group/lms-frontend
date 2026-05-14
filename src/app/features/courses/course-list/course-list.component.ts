@@ -21,7 +21,7 @@ import { MatButtonModule } from '@angular/material/button';
       <div class="flex items-center justify-between mb-6">
         <h1 class="section-title mb-0">Courses</h1>
         <!-- TODO: Show only for Admin/Lecturer -->
-        <button mat-flat-button color="primary">+ Create Course</button>
+        <button mat-flat-button color="primary" class="min-h-[44px]">+ Create Course</button>
       </div>
 
       <div class="lms-card text-center py-12">

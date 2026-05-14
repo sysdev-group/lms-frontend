@@ -1,14 +1,5 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// STUB FEATURE COMPONENTS
-//
-// Each component below renders a placeholder page.
-// To implement: replace the template with real UI and inject the matching service.
-// Follow LoginComponent as the pattern for forms and ShellComponent for layout.
-//
-// File organisation note:
-// Each class below should eventually live in its own file.
-// They are grouped here for scaffold brevity. Move them as you implement them.
-// ─────────────────────────────────────────────────────────────────────────────
+// All components in this file have been extracted to their own files and are no longer used.
+// This file is kept for reference only and can be deleted once all routes are implemented.
 
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
