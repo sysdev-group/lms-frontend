@@ -266,6 +266,29 @@ export interface CreateSessionRequest {
   type: SessionType;
 }
 
+// ─── Audit ────────────────────────────────────────────────────────────────────
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  userId: string | null;
+  userFullName: string | null;
+  ipAddress: string | null;
+  timestamp: string;
+}
+
+export interface AuditLogQueryParams {
+  actionType?: string;
+  userId?: string;
+  entityType?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
 // ─── Attendance ───────────────────────────────────────────────────────────────
 
 export interface AttendanceRecord {
