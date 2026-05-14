@@ -25,7 +25,6 @@ import {
   Assignment, CreateAssignmentRequest, UpdateAssignmentRequest,
   Submission, CreateSubmissionRequest, GradeSubmissionRequest,
   Grade,
-  Notification, SendNotificationRequest,
 } from '@shared/models/models';
 
 // ─── COURSE SERVICE ───────────────────────────────────────────────────────────
@@ -136,24 +135,3 @@ export class GradeService {
   }
 }
 
-// ─── NOTIFICATION SERVICE ─────────────────────────────────────────────────────
-/** Docs: Section 7.7 + Section 23 — Notification System */
-@Injectable({ providedIn: 'root' })
-export class NotificationService {
-  constructor(private api: ApiService) {}
-
-  getMyNotifications(unreadOnly = false): Observable<Notification[]> {
-    // TODO: return this.api.get<Notification[]>('/notifications', { unreadOnly });
-    throw new Error('NotificationService.getMyNotifications — not yet implemented');
-  }
-
-  send(request: SendNotificationRequest): Observable<void> {
-    // TODO: return this.api.post<void>('/notifications', request);
-    throw new Error('NotificationService.send — not yet implemented');
-  }
-
-  markAsRead(id: string): Observable<void> {
-    // TODO: return this.api.patch<void>(`/notifications/${id}/read`);
-    throw new Error('NotificationService.markAsRead — not yet implemented');
-  }
-}
