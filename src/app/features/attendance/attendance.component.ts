@@ -75,7 +75,7 @@ interface MarkableRecord {
                     @if (s.belowWarningThreshold) {
                       <mat-icon class="text-red-500" title="Below attendance threshold">warning</mat-icon>
                     }
-                    <span [class]="percentageCss(s.attendancePercentage)">
+                    <span [class]="percentageCss(s)">
                       {{ s.attendancePercentage | number:'1.0-0' }}%
                     </span>
                   </div>
@@ -84,7 +84,7 @@ interface MarkableRecord {
                 <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
                   <div
                     class="h-full rounded-full transition-all"
-                    [class]="barCss(s.attendancePercentage)"
+                    [class]="barCss(s)"
                     [style.width.%]="s.attendancePercentage">
                   </div>
                 </div>
@@ -300,15 +300,15 @@ export class AttendanceComponent implements OnInit {
       });
   }
 
-  percentageCss(pct: number): string {
-    if (pct >= 80) return 'text-lg font-bold text-green-600';
-    if (pct >= 60) return 'text-lg font-bold text-amber-600';
-    return 'text-lg font-bold text-red-600';
+  percentageCss(s: StudentAttendanceSummary): string {
+    if (s.belowWarningThreshold) return 'text-lg font-bold text-red-600';
+    if (s.attendancePercentage >= 80) return 'text-lg font-bold text-green-600';
+    return 'text-lg font-bold text-amber-600';
   }
 
-  barCss(pct: number): string {
-    if (pct >= 80) return 'bg-green-500';
-    if (pct >= 60) return 'bg-amber-500';
-    return 'bg-red-500';
+  barCss(s: StudentAttendanceSummary): string {
+    if (s.belowWarningThreshold) return 'bg-red-500';
+    if (s.attendancePercentage >= 80) return 'bg-green-500';
+    return 'bg-amber-500';
   }
 }
