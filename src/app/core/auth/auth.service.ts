@@ -1,10 +1,11 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { environment } from '@env/environment';
 import { ApiResponse } from '@shared/models/api-response.model';
 import { AuthUser, LoginRequest, LoginResponse, ForgotPasswordRequest, ResetPasswordRequest } from '@shared/models/models';
+import { SKIP_ERROR_SNACKBAR } from '../interceptors/error.interceptor';
 
 /**
  * Authentication service — the WORKED EXAMPLE for frontend services.
@@ -98,7 +99,9 @@ export class AuthService {
   }
 
   forgotPassword(request: ForgotPasswordRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/auth/forgot-password`, request);
+    return this.http.post<void>(`${this.apiUrl}/auth/forgot-password`, request, {
+      context: new HttpContext().set(SKIP_ERROR_SNACKBAR, true),
+    });
   }
 
   resetPassword(request: ResetPasswordRequest): Observable<void> {

@@ -7,8 +7,8 @@ import { Component } from '@angular/core';
   template: `
     <div class="page-container">
       <h1 class="section-title">Notifications</h1>
-      <div class="lms-card text-center py-12">
-        <p class="text-slate-500">Your notifications will appear here.</p>
+      <div class="lms-card text-center py-16">
+        <p class="text-slate-400 text-sm">This section is not yet available.</p>
       </div>
     </div>
   `,
