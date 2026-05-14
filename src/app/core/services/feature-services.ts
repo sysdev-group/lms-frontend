@@ -27,7 +27,6 @@ import {
   Grade,
   Notification, SendNotificationRequest,
   Enrollment, EnrollStudentRequest,
-  TimetableSession, CreateSessionRequest,
   AttendanceRecord, MarkAttendanceRequest, StudentAttendanceSummary,
 } from '@shared/models/models';
 
@@ -180,28 +179,6 @@ export class EnrollmentService {
   getMyEnrollments(): Observable<Enrollment[]> {
     // TODO: return this.api.get<Enrollment[]>('/enrollment/student/me');
     throw new Error('EnrollmentService.getMyEnrollments — not yet implemented');
-  }
-}
-
-// ─── TIMETABLE SERVICE ────────────────────────────────────────────────────────
-/** Docs: Section 24 — Timetable Management Module */
-@Injectable({ providedIn: 'root' })
-export class TimetableService {
-  constructor(private api: ApiService) {}
-
-  getSessionsBySemester(semesterId: string): Observable<TimetableSession[]> {
-    // TODO: return this.api.get<TimetableSession[]>(`/timetable/batch/${semesterId}`);
-    throw new Error('TimetableService.getSessionsBySemester — not yet implemented');
-  }
-
-  createSession(request: CreateSessionRequest): Observable<TimetableSession> {
-    // TODO: return this.api.post<TimetableSession>('/timetable', request);
-    throw new Error('TimetableService.createSession — not yet implemented');
-  }
-
-  publishSession(id: string): Observable<void> {
-    // TODO: return this.api.put<void>(`/timetable/${id}/publish`, {});
-    throw new Error('TimetableService.publishSession — not yet implemented');
   }
 }
 
