@@ -26,7 +26,6 @@ import {
   Submission, CreateSubmissionRequest, GradeSubmissionRequest,
   Grade,
   Notification, SendNotificationRequest,
-  Enrollment, EnrollStudentRequest,
 } from '@shared/models/models';
 
 // ─── COURSE SERVICE ───────────────────────────────────────────────────────────
@@ -156,27 +155,5 @@ export class NotificationService {
   markAsRead(id: string): Observable<void> {
     // TODO: return this.api.patch<void>(`/notifications/${id}/read`);
     throw new Error('NotificationService.markAsRead — not yet implemented');
-  }
-}
-
-// ─── ENROLLMENT SERVICE ───────────────────────────────────────────────────────
-/** Docs: Section 28 — Enrollment Workflow */
-@Injectable({ providedIn: 'root' })
-export class EnrollmentService {
-  constructor(private api: ApiService) {}
-
-  enroll(request: EnrollStudentRequest): Observable<Enrollment> {
-    // TODO: return this.api.post<Enrollment>('/enrollment', request);
-    throw new Error('EnrollmentService.enroll — not yet implemented');
-  }
-
-  drop(enrollmentId: string): Observable<void> {
-    // TODO: return this.api.delete(`/enrollment/${enrollmentId}`);
-    throw new Error('EnrollmentService.drop — not yet implemented');
-  }
-
-  getMyEnrollments(): Observable<Enrollment[]> {
-    // TODO: return this.api.get<Enrollment[]>('/enrollment/student/me');
-    throw new Error('EnrollmentService.getMyEnrollments — not yet implemented');
   }
 }
