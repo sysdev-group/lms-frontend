@@ -32,7 +32,7 @@ export const authInterceptor: HttpInterceptorFn = (
       if (error.status === 401 && !isAuthEndpoint(req.url)) {
         // Token expired — try to refresh silently, then retry the original request
         return authService.refreshToken().pipe(
-          switchMap(newToken => next(attachToken(req, newToken)))
+          switchMap(() => next(attachToken(req, authService.getAccessToken()!)))
         );
       }
       return throwError(() => error);
