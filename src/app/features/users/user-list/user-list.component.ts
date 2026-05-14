@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, Subject, takeUntil } from 'rxjs';
+import { debounceTime } from 'rxjs';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -149,7 +150,7 @@ import { User, UserRole } from '@shared/models/models';
     </div>
   `,
 })
-export class UserListComponent implements OnInit, OnDestroy {
+export class UserListComponent implements OnInit {
   filterForm: FormGroup;
   isLoading = signal(true);
   users = signal<User[]>([]);
@@ -159,7 +160,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   pageSize = signal(20);
   readonly displayedColumns = ['name', 'email', 'role', 'status', 'actions'];
 
-  private destroy$ = new Subject<void>();
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     private userService: UserService,
@@ -172,17 +173,12 @@ export class UserListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.filterForm.valueChanges.pipe(
       debounceTime(300),
-      takeUntil(this.destroy$),
+      takeUntilDestroyed(this.destroyRef),
     ).subscribe(() => {
       this.page.set(0);
       this.loadUsers();
     });
     this.loadUsers();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
   loadUsers(): void {
