@@ -1,15 +1,15 @@
+// ─── Angular Material theme (must come before @tailwind) ──────────────────────
+@use "@angular/material" as mat;
+
 // ─── Tailwind directives ──────────────────────────────────────────────────────
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-// ─── Angular Material theme ───────────────────────────────────────────────────
-@use "@angular/material" as mat;
-
 @include mat.core();
 
 $lms-primary: mat.define-palette(mat.$blue-palette, 600);
-$lms-accent:  mat.define-palette(mat.$violet-palette, 500);
+$lms-accent:  mat.define-palette(mat.$deep-purple-palette, 500);
 $lms-warn:    mat.define-palette(mat.$red-palette);
 
 $lms-theme: mat.define-light-theme((
@@ -29,18 +29,20 @@ html, body {
   font-family: "Inter", sans-serif;
   background-color: #f8fafc;
   color: #1e293b;
+  // Prevent horizontal scroll at the document level
+  overflow-x: hidden;
 }
 
 // ─── Utility classes ──────────────────────────────────────────────────────────
 
 // Page wrapper — use on every feature page's root element
 .page-container {
-  @apply p-6 max-w-7xl mx-auto;
+  @apply p-4 sm:p-6 max-w-7xl mx-auto;
 }
 
 // Card — use for content panels
 .lms-card {
-  @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
+  @apply bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6;
 }
 
 // Section heading
