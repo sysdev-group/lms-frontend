@@ -11,7 +11,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { ConfirmDialogComponent } from '@features/users/user-detail/user-detail.component';
 import { EnrollmentService } from '@core/services/enrollment.service';
 import { CourseService } from '@core/services/course.service';
 import { UserService } from '@core/services/user.service';
@@ -37,6 +39,7 @@ import {
     MatCardModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
+    MatDialogModule,
     MatIconModule,
   ],
   template: `
@@ -261,6 +264,7 @@ export class EnrollmentComponent implements OnInit {
     private userService: UserService,
     private authService: AuthService,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     private fb: FormBuilder,
   ) {
     this.enrollForm = this.fb.group({
@@ -372,17 +376,23 @@ export class EnrollmentComponent implements OnInit {
   }
 
   onDrop(enrollment: Enrollment): void {
-    if (!window.confirm(`Drop enrollment from "${enrollment.courseName}"?\n\nThis action cannot be undone.`)) {
-      return;
-    }
-    this.enrollmentService.drop(enrollment.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => this.loadStudentEnrollments(),
-        error: (err) => {
-          this.errorMessage.set(err?.error?.message ?? 'Failed to drop enrollment.');
-        },
-      });
+    this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Drop Enrollment',
+        message: `Drop enrollment from "${enrollment.courseName}"? This action cannot be undone.`,
+      },
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.enrollmentService.drop(enrollment.id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => this.loadStudentEnrollments(),
+          error: (err) => {
+            this.errorMessage.set(err?.error?.message ?? 'Failed to drop enrollment.');
+          },
+        });
+    });
   }
 
   statusCss(status: string): string {
