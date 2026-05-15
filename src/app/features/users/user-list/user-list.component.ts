@@ -1,74 +1,77 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { UserService } from '@core/services/user.service';
 import { User, UserRole, UserQueryParams } from '@shared/models/models';
 
-/**
- * Admin-only user list page — Section 7.3.
- * Displays a paginated, filterable table of all users.
- * Filters: search (name/email), role, active status.
- * Row actions: edit (navigates to detail), deactivate.
- */
 @Component({
   selector: 'app-user-list',
   standalone: true,
   imports: [
     ReactiveFormsModule,
+    DatePipe,
     MatTableModule,
     MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule,
-    MatProgressSpinnerModule,
     MatTooltipModule,
   ],
   template: `
     <div class="page-container">
 
-      <!-- Header -->
-      <h1 class="section-title">Users</h1>
+      <!-- Page header -->
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 class="font-display text-2xl font-bold text-slate-900 tracking-tight">User Management</h1>
+          <p class="text-slate-500 mt-1 text-sm">{{ totalCount() }} users registered</p>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button mat-stroked-button class="min-h-[44px]">
+            <mat-icon>upload</mat-icon>
+            Bulk Import
+          </button>
+          <button mat-flat-button color="primary" class="min-h-[44px]">
+            <mat-icon>add</mat-icon>
+            Add User
+          </button>
+        </div>
+      </div>
 
-      <!-- Filters -->
+      <!-- Search + Filter bar -->
       <div class="lms-card mb-4">
-        <form [formGroup]="filterForm" class="flex flex-col sm:flex-row gap-3">
+        <form [formGroup]="filterForm" class="flex flex-col gap-4">
 
-          <mat-form-field appearance="outline" class="flex-1 min-w-0">
-            <mat-label>Search</mat-label>
-            <input matInput formControlName="search" placeholder="Name or email..." />
-            <mat-icon matPrefix class="mr-2 text-slate-400">search</mat-icon>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-icon matPrefix class="text-slate-400 mr-1">search</mat-icon>
+            <input matInput formControlName="search"
+              placeholder="Search by name or email..." />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="sm:w-44">
-            <mat-label>Role</mat-label>
-            <mat-select formControlName="role">
-              <mat-option value="">All roles</mat-option>
-              <mat-option value="Student">Student</mat-option>
-              <mat-option value="Lecturer">Lecturer</mat-option>
-              <mat-option value="Admin">Admin</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="sm:w-40">
-            <mat-label>Status</mat-label>
-            <mat-select formControlName="isActive">
-              <mat-option value="">All</mat-option>
-              <mat-option value="true">Active</mat-option>
-              <mat-option value="false">Inactive</mat-option>
-            </mat-select>
-          </mat-form-field>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <mat-button-toggle-group formControlName="role"
+              aria-label="Filter by role">
+              <mat-button-toggle value="" class="min-h-[36px]">All</mat-button-toggle>
+              <mat-button-toggle value="Admin" class="min-h-[36px]">Admin</mat-button-toggle>
+              <mat-button-toggle value="Lecturer" class="min-h-[36px]">Lecturer</mat-button-toggle>
+              <mat-button-toggle value="Student" class="min-h-[36px]">Student</mat-button-toggle>
+            </mat-button-toggle-group>
+            <span class="text-sm text-slate-500">
+              Showing {{ users().length }} of {{ totalCount() }} users
+            </span>
+          </div>
 
         </form>
       </div>
@@ -76,19 +79,48 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
       <!-- Table card -->
       <div class="lms-card p-0 overflow-hidden">
 
-        <!-- Loading -->
+        <!-- Skeleton loading -->
         @if (isLoading()) {
-          <div class="flex justify-center py-16">
-            <mat-spinner diameter="40" />
+          <div class="overflow-x-auto">
+            <div class="flex items-center gap-6 px-6 py-3 border-b border-slate-200 bg-slate-50">
+              <div class="w-10 h-3 bg-slate-200 rounded animate-pulse"></div>
+              <div class="flex-1 h-3 bg-slate-200 rounded animate-pulse max-w-[160px]"></div>
+              <div class="w-14 h-3 bg-slate-200 rounded animate-pulse"></div>
+              <div class="w-20 h-3 bg-slate-200 rounded animate-pulse hidden sm:block"></div>
+              <div class="w-16 h-3 bg-slate-200 rounded animate-pulse ml-auto"></div>
+            </div>
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="flex items-center gap-6 px-6 py-4 border-b border-slate-100">
+                <div class="w-10 h-10 rounded-full bg-slate-200 animate-pulse flex-shrink-0"></div>
+                <div class="flex-1 min-w-0 space-y-2">
+                  <div class="h-4 bg-slate-200 rounded animate-pulse w-36"></div>
+                  <div class="h-3 bg-slate-100 rounded animate-pulse w-52"></div>
+                </div>
+                <div class="h-5 w-16 bg-slate-200 rounded-full animate-pulse"></div>
+                <div class="h-4 w-24 bg-slate-200 rounded animate-pulse hidden sm:block"></div>
+                <div class="flex gap-1 ml-auto">
+                  <div class="w-9 h-9 rounded bg-slate-200 animate-pulse"></div>
+                  <div class="w-9 h-9 rounded bg-slate-200 animate-pulse"></div>
+                </div>
+              </div>
+            }
           </div>
         }
 
         <!-- Empty state -->
         @if (!isLoading() && users().length === 0) {
-          <div class="text-center py-16">
-            <mat-icon class="!text-5xl text-slate-300 mb-3 block">people</mat-icon>
-            <p class="text-slate-500 font-medium">No users found</p>
-            <p class="text-sm text-slate-400 mt-1">Try adjusting your search or filters</p>
+          <div class="flex flex-col items-center justify-center py-20 gap-3">
+            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+              <mat-icon class="!text-3xl text-slate-400">people</mat-icon>
+            </div>
+            <p class="font-semibold text-slate-700">No users found</p>
+            <p class="text-sm text-slate-400">Try adjusting your search or filters</p>
+            @if (totalCount() === 0) {
+              <button mat-flat-button color="primary" class="mt-2 min-h-[44px]">
+                <mat-icon>add</mat-icon>
+                Add User
+              </button>
+            }
           </div>
         }
 
@@ -97,82 +129,89 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
           <div class="overflow-x-auto">
             <table mat-table [dataSource]="users()" class="w-full">
 
-              <!-- Name column -->
-              <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef class="!pl-6 font-semibold text-slate-700 bg-slate-50">Name</th>
-                <td mat-cell *matCellDef="let user" class="!pl-6">
-                  <div class="flex items-center gap-3 py-1">
-                    <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
-                      <span class="text-primary-700 text-xs font-semibold">
-                        {{ user.firstName[0] }}{{ user.lastName[0] }}
-                      </span>
-                    </div>
-                    <span class="font-medium text-slate-800">{{ user.firstName }} {{ user.lastName }}</span>
+              <!-- Avatar column -->
+              <ng-container matColumnDef="avatar">
+                <th mat-header-cell *matHeaderCellDef
+                  class="!pl-6 bg-slate-50 w-14 !border-b-0">
+                </th>
+                <td mat-cell *matCellDef="let user" class="!pl-6 !py-3 w-14">
+                  <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-700
+                    flex items-center justify-center flex-shrink-0
+                    font-semibold text-sm select-none">
+                    {{ user.firstName[0] }}{{ user.lastName[0] }}
                   </div>
                 </td>
               </ng-container>
 
-              <!-- Email column — hidden on mobile -->
-              <ng-container matColumnDef="email">
-                <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-700 bg-slate-50 hidden sm:table-cell">Email</th>
-                <td mat-cell *matCellDef="let user" class="text-slate-600 text-sm hidden sm:table-cell">
-                  {{ user.email }}
+              <!-- Name + Email column -->
+              <ng-container matColumnDef="nameEmail">
+                <th mat-header-cell *matHeaderCellDef
+                  class="bg-slate-50 font-semibold text-slate-500 text-xs uppercase tracking-wide !py-3">
+                  User
+                </th>
+                <td mat-cell *matCellDef="let user" class="!py-3">
+                  <span class="font-semibold text-slate-900 block leading-tight">
+                    {{ user.firstName }} {{ user.lastName }}
+                  </span>
+                  <span class="text-sm text-slate-500 block mt-0.5">{{ user.email }}</span>
                 </td>
               </ng-container>
 
               <!-- Role column -->
               <ng-container matColumnDef="role">
-                <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-700 bg-slate-50">Role</th>
-                <td mat-cell *matCellDef="let user">
+                <th mat-header-cell *matHeaderCellDef
+                  class="bg-slate-50 font-semibold text-slate-500 text-xs uppercase tracking-wide !py-3">
+                  Role
+                </th>
+                <td mat-cell *matCellDef="let user" class="!py-3">
                   <span [class]="roleBadgeClass(user.role)">{{ user.role }}</span>
                 </td>
               </ng-container>
 
-              <!-- Status column -->
-              <ng-container matColumnDef="status">
-                <th mat-header-cell *matHeaderCellDef class="font-semibold text-slate-700 bg-slate-50">Status</th>
-                <td mat-cell *matCellDef="let user">
-                  @if (user.isActive) {
-                    <span class="badge badge-success">Active</span>
-                  } @else {
-                    <span class="badge badge-danger">Inactive</span>
-                  }
+              <!-- Joined column -->
+              <ng-container matColumnDef="joined">
+                <th mat-header-cell *matHeaderCellDef
+                  class="bg-slate-50 font-semibold text-slate-500 text-xs uppercase tracking-wide hidden sm:table-cell !py-3">
+                  Joined
+                </th>
+                <td mat-cell *matCellDef="let user"
+                  class="text-sm text-slate-500 hidden sm:table-cell !py-3">
+                  {{ user.createdAt | date:'d MMM y' }}
                 </td>
               </ng-container>
 
               <!-- Actions column -->
               <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="!pr-4 bg-slate-50"></th>
-                <td mat-cell *matCellDef="let user" class="!pr-4">
-                  <div class="flex items-center justify-end gap-1">
+                <th mat-header-cell *matHeaderCellDef class="!pr-4 bg-slate-50 w-24 !border-b-0"></th>
+                <td mat-cell *matCellDef="let user" class="!pr-4 !py-3">
+                  <div class="flex items-center justify-end gap-0.5">
+                    <button mat-icon-button
+                      matTooltip="View profile"
+                      (click)="$event.stopPropagation(); editUser(user)"
+                      aria-label="View user profile"
+                      class="!w-9 !h-9">
+                      <mat-icon class="text-slate-400 text-[18px]">visibility</mat-icon>
+                    </button>
                     <button mat-icon-button
                       matTooltip="Edit user"
                       (click)="$event.stopPropagation(); editUser(user)"
-                      aria-label="Edit user">
-                      <mat-icon class="text-slate-500">edit</mat-icon>
+                      aria-label="Edit user"
+                      class="!w-9 !h-9">
+                      <mat-icon class="text-slate-400 text-[18px]">edit</mat-icon>
                     </button>
-                    @if (user.isActive) {
-                      <button mat-icon-button color="warn"
-                        matTooltip="Deactivate user"
-                        (click)="$event.stopPropagation(); onDeactivateClick(user)"
-                        aria-label="Deactivate user">
-                        <mat-icon>person_off</mat-icon>
-                      </button>
-                    }
                   </div>
                 </td>
               </ng-container>
 
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns" class="h-11"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-                class="hover:bg-slate-50 transition-colors cursor-pointer"
+                class="hover:bg-slate-50 transition-colors cursor-pointer border-b border-slate-100 last:border-0"
                 (click)="editUser(row)">
               </tr>
 
             </table>
           </div>
 
-          <!-- Paginator -->
           <mat-paginator
             [length]="totalCount()"
             [pageSize]="pageSize()"
@@ -195,7 +234,7 @@ export class UserListComponent implements OnInit {
   pageSize = signal(10);
 
   filterForm: FormGroup;
-  readonly displayedColumns = ['name', 'email', 'role', 'status', 'actions'];
+  readonly displayedColumns = ['avatar', 'nameEmail', 'role', 'joined', 'actions'];
 
   constructor(
     private userService: UserService,
@@ -223,7 +262,7 @@ export class UserListComponent implements OnInit {
   loadUsers(): void {
     const { search, role, isActive } = this.filterForm.value;
     const params: Record<string, string | number | boolean> = {
-      page: this.page() + 1,  // paginator is 0-indexed; API is 1-indexed
+      page: this.page() + 1,
       pageSize: this.pageSize(),
     };
     if (search?.trim()) params['search'] = search.trim();
@@ -262,11 +301,12 @@ export class UserListComponent implements OnInit {
   }
 
   roleBadgeClass(role: UserRole): string {
+    const base = 'text-xs font-medium px-2 py-1 rounded-full';
     const map: Record<UserRole, string> = {
-      Admin:    'badge badge-info',
-      Lecturer: 'badge badge-warning',
-      Student:  'badge badge-success',
+      Admin:    `${base} bg-red-100 text-red-700`,
+      Lecturer: `${base} bg-blue-100 text-blue-700`,
+      Student:  `${base} bg-green-100 text-green-700`,
     };
-    return map[role] ?? 'badge badge-neutral';
+    return map[role] ?? `${base} bg-slate-100 text-slate-700`;
   }
 }

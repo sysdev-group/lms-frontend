@@ -29,7 +29,7 @@ import { AuthService } from '@core/auth/auth.service';
           <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 mb-4">
             <mat-icon class="text-white text-3xl">lock_reset</mat-icon>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">Reset your password</h1>
+          <h1 class="font-display text-2xl font-bold text-slate-800">Reset your password</h1>
           <p class="text-slate-500 mt-1">Enter your email to receive a reset link</p>
         </div>
 
@@ -42,7 +42,7 @@ import { AuthService } from '@core/auth/auth.service';
               <mat-icon class="text-green-500 mb-3" style="font-size:48px;width:48px;height:48px">
                 mark_email_read
               </mat-icon>
-              <h2 class="text-lg font-semibold text-slate-800 mb-2">Check your inbox</h2>
+              <h2 class="font-display text-lg font-semibold text-slate-800 mb-2">Check your inbox</h2>
               <p class="text-slate-500 text-sm mb-6">
                 If an account exists for
                 <strong class="text-slate-700">{{ emailSent() }}</strong>,
