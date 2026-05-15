@@ -29,6 +29,11 @@ export class CourseService {
     return this.api.put<Course>(`/courses/${id}`, request);
   }
 
+  /** Get the semester ID for a course — used by enrollment form auto-fill. */
+  getCourseSemesterId(id: string): Observable<string> {
+    return this.api.get<string>(`/courses/${id}/semester-id`);
+  }
+
   private toQueryParams(params?: CourseQueryParams): Record<string, string | number | boolean> | undefined {
     if (!params) {
       return undefined;

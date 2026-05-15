@@ -37,6 +37,11 @@ export class AssignmentService {
     return this.api.get<Assignment[]>('/assignments', params);
   }
 
+  /** Fetch all assignments across every course the current student is enrolled in. */
+  getMyAssignments(): Observable<Assignment[]> {
+    return this.api.get<Assignment[]>('/assignments/my');
+  }
+
   /**
    * Fetch a single assignment by its ID.
    * @param id The assignment UUID.

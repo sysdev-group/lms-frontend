@@ -158,7 +158,8 @@ import {
 
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Semester ID</mat-label>
-                  <input matInput formControlName="semesterId" placeholder="e.g. sem-2026-1" />
+                  <input matInput formControlName="semesterId" readonly />
+                  <mat-hint>Auto-filled when a module is selected</mat-hint>
                 </mat-form-field>
 
                 <div class="flex justify-end">
@@ -286,9 +287,11 @@ export class EnrollmentComponent implements OnInit {
           if (courseId) {
             this.selectedCourseId.set(courseId);
             this.loadCourseEnrollments(courseId);
+            this.loadCourseSemesterId(courseId);
           } else {
             this.selectedCourseId.set(null);
             this.courseEnrollments.set([]);
+            this.enrollForm.patchValue({ semesterId: '' });
           }
         });
     }
@@ -345,6 +348,15 @@ export class EnrollmentComponent implements OnInit {
         error: () => {
           this.listLoading.set(false);
         },
+      });
+  }
+
+  private loadCourseSemesterId(courseId: string): void {
+    this.courseService.getCourseSemesterId(courseId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (id) => this.enrollForm.patchValue({ semesterId: id }),
+        error: () => {},
       });
   }
 
