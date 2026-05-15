@@ -100,6 +100,14 @@ export interface FileMetadata {
   entityId: string;
 }
 
+export interface FileUploadResult {
+  fileId: string;
+  fileName: string;
+  fileUrl: string;
+  fileSizeBytes: number;
+  contentType: string;
+}
+
 // ─── Courses ──────────────────────────────────────────────────────────────────
 
 export interface Course {
@@ -182,6 +190,7 @@ export interface Submission {
   submittedAt: string;
   isLate: boolean;
   fileName: string | null;
+  fileUrl?: string | null;
   isGraded: boolean;
 }
 

@@ -16,6 +16,7 @@ import { AssignmentService } from '@core/services/assignment.service';
 import { SubmissionService } from '@core/services/submission.service';
 import { GradeService } from '@core/services/grade.service';
 import { AuthService } from '@core/auth/auth.service';
+import { FileService } from '@core/services/file.service';
 import { Assignment, Grade, Submission } from '@shared/models/models';
 
 interface DeadlineInfo {
@@ -98,7 +99,6 @@ interface SubmissionRow extends Submission {
               <h1 class="font-display text-2xl font-bold text-slate-900 leading-snug">
                 {{ assignment()!.title }}
               </h1>
-              <!-- Status badge top-right -->
               @if (deadlineInfo()!.isPast) {
                 <span class="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
                   Closed
@@ -174,7 +174,6 @@ interface SubmissionRow extends Submission {
               }
             </mat-expansion-panel>
 
-            <!-- View submission file -->
             @if (mySubmission()) {
               <div class="lms-card bg-blue-50 border border-blue-200 flex items-center gap-3">
                 <mat-icon class="text-blue-500 shrink-0">check_circle</mat-icon>
@@ -244,36 +243,80 @@ interface SubmissionRow extends Submission {
               }
 
               <!-- Upload zone -->
-              <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 p-6 mb-4">
-                <div class="flex flex-col items-center text-center mb-4 pointer-events-none">
-                  <mat-icon class="text-slate-300 mb-2" style="font-size:44px;width:44px;height:44px">cloud_upload</mat-icon>
-                  <p class="text-slate-500 font-medium">Drop your file here or click to browse</p>
-                  <p class="text-xs text-slate-400 mt-1">Accepted: PDF, DOC, DOCX, ZIP</p>
-                </div>
-                <form [formGroup]="submitForm" (ngSubmit)="submitAssignment()">
-                  <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>File ID</mat-label>
-                    <input matInput formControlName="fileId"
-                      placeholder="Paste the file ID returned by the upload service" />
-                    <mat-hint>Upload your file and paste the returned ID here.</mat-hint>
-                  </mat-form-field>
+              <div class="border-2 border-dashed rounded-xl bg-slate-50 p-6 mb-4 transition-colors"
+                [class.border-slate-300]="uploadState() === 'idle' || uploadState() === 'uploading'"
+                [class.border-green-400]="uploadState() === 'ready'"
+                [class.border-red-300]="uploadState() === 'error'">
 
-                  @if (submitError()) {
-                    <p class="text-sm text-red-600 mt-2">{{ submitError() }}</p>
-                  }
+                <!-- IDLE: file picker -->
+                @if (uploadState() === 'idle') {
+                  <label class="flex flex-col items-center text-center cursor-pointer">
+                    <mat-icon class="text-slate-300 mb-2" style="font-size:44px;width:44px;height:44px">cloud_upload</mat-icon>
+                    <p class="text-slate-500 font-medium">Drop your file here or click to browse</p>
+                    <p class="text-xs text-slate-400 mt-1">Accepted: PDF, DOC, DOCX, ZIP, Images — max 50 MB</p>
+                    <input type="file" class="hidden"
+                      accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.txt"
+                      (change)="onFileSelected($event)" />
+                  </label>
+                }
 
-                  <button mat-flat-button color="primary" type="submit"
-                    class="w-full min-h-[44px] mt-4"
-                    [disabled]="deadlineInfo()!.isPast || isSubmitting()">
-                    @if (isSubmitting()) {
-                      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
-                      Submitting…
-                    } @else {
-                      Submit Assignment
-                    }
-                  </button>
-                </form>
+                <!-- UPLOADING: spinner -->
+                @if (uploadState() === 'uploading') {
+                  <div class="flex flex-col items-center gap-3 py-2">
+                    <mat-spinner diameter="32"></mat-spinner>
+                    <p class="text-slate-500 text-sm">Uploading your file…</p>
+                  </div>
+                }
+
+                <!-- READY: success state -->
+                @if (uploadState() === 'ready') {
+                  <div class="flex flex-col items-center gap-1">
+                    <mat-icon class="text-green-500 mb-1" style="font-size:40px;width:40px;height:40px">check_circle</mat-icon>
+                    <p class="font-semibold text-slate-800">{{ selectedFileName() }}</p>
+                    <p class="text-slate-400 text-sm">{{ formatBytes(selectedFileSize()) }}</p>
+                    <p class="text-green-600 text-sm mt-1">File ready — click Submit Assignment</p>
+                    <button mat-button class="text-xs text-slate-400 mt-1 min-h-[36px]"
+                      (click)="resetUpload()">
+                      Change file
+                    </button>
+                  </div>
+                }
+
+                <!-- ERROR: retry -->
+                @if (uploadState() === 'error') {
+                  <div class="flex flex-col items-center gap-2">
+                    <mat-icon class="text-red-500" style="font-size:40px;width:40px;height:40px">error_outline</mat-icon>
+                    <p class="font-semibold text-red-600">Upload failed</p>
+                    <p class="text-slate-500 text-sm">Please try again</p>
+                    <button mat-stroked-button color="warn" class="min-h-[44px] mt-1"
+                      (click)="resetUpload()">
+                      Try Again
+                    </button>
+                  </div>
+                }
               </div>
+
+              <!-- Hidden fileId control — kept for form binding, never shown -->
+              <form [formGroup]="submitForm" (ngSubmit)="submitAssignment()">
+                <div style="display:none">
+                  <input formControlName="fileId" />
+                </div>
+
+                @if (submitError()) {
+                  <p class="text-sm text-red-600 mb-2">{{ submitError() }}</p>
+                }
+
+                <button mat-flat-button color="primary" type="submit"
+                  class="w-full min-h-[44px]"
+                  [disabled]="deadlineInfo()!.isPast || isSubmitting() || uploadState() !== 'ready'">
+                  @if (isSubmitting()) {
+                    <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
+                    Submitting…
+                  } @else {
+                    Submit Assignment
+                  }
+                </button>
+              </form>
             </div>
           }
 
@@ -349,13 +392,17 @@ interface SubmissionRow extends Submission {
                       </div>
                     </div>
 
-                    <!-- File -->
-                    @if (row.fileName) {
+                    <!-- File link — opens Cloudinary URL directly -->
+                    @if (row.fileUrl) {
+                      <a [href]="row.fileUrl" target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-1 text-sm text-primary-600 underline hover:text-primary-700 transition-colors mb-3 no-underline">
+                        <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
+                        {{ row.fileName }}
+                      </a>
+                    } @else if (row.fileName) {
                       <div class="flex items-center gap-1 text-sm text-slate-600 mb-3">
                         <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
-                        <span class="underline cursor-pointer hover:text-primary-600 transition-colors">
-                          {{ row.fileName }}
-                        </span>
+                        <span>{{ row.fileName }}</span>
                       </div>
                     }
 
@@ -426,6 +473,11 @@ export class AssignmentDetailComponent implements OnInit {
   submitError = signal<string | null>(null);
   savingIds = signal<ReadonlySet<string>>(new Set());
 
+  uploadState = signal<'idle' | 'uploading' | 'ready' | 'error'>('idle');
+  uploadedFileUrl = signal<string | null>(null);
+  selectedFileName = signal<string>('');
+  selectedFileSize = signal<number>(0);
+
   readonly userRole = this.authService.userRole;
   readonly submitForm: FormGroup;
 
@@ -443,6 +495,7 @@ export class AssignmentDetailComponent implements OnInit {
     private submissionService: SubmissionService,
     private gradeService: GradeService,
     private authService: AuthService,
+    private fileService: FileService,
   ) {
     this.submitForm = this.fb.group({ fileId: [''] });
   }
@@ -455,6 +508,41 @@ export class AssignmentDetailComponent implements OnInit {
     } else {
       this.loadLecturerView();
     }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.selectedFileName.set(file.name);
+    this.selectedFileSize.set(file.size);
+    this.uploadState.set('uploading');
+
+    this.fileService.uploadFile(file)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: result => {
+          this.submitForm.patchValue({ fileId: result.fileId });
+          this.uploadedFileUrl.set(result.fileUrl);
+          this.uploadState.set('ready');
+        },
+        error: () => this.uploadState.set('error'),
+      });
+  }
+
+  resetUpload(): void {
+    this.uploadState.set('idle');
+    this.uploadedFileUrl.set(null);
+    this.selectedFileName.set('');
+    this.selectedFileSize.set(0);
+    this.submitForm.patchValue({ fileId: '' });
+  }
+
+  formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   pct(grade: Grade, maxMarks: number): number {
@@ -478,11 +566,11 @@ export class AssignmentDetailComponent implements OnInit {
       fileId: this.submitForm.value.fileId || undefined,
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (submission) => {
+        next: submission => {
           this.mySubmission.set(submission);
           this.isSubmitting.set(false);
         },
-        error: (err) => {
+        error: err => {
           this.submitError.set(err?.error?.message ?? 'Submission failed. Please try again.');
           this.isSubmitting.set(false);
         },
@@ -497,7 +585,7 @@ export class AssignmentDetailComponent implements OnInit {
       feedback: row.gradeForm.value.feedback || undefined,
     }).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (grade) => {
+        next: grade => {
           this.allSubmissions.update(rows =>
             rows.map(r => r.id === row.id ? { ...r, isGraded: true, gradeId: grade.id } : r)
           );
@@ -540,14 +628,14 @@ export class AssignmentDetailComponent implements OnInit {
           : of(null);
       }),
     ).subscribe({
-      next: (grades) => {
+      next: grades => {
         if (grades) {
           const title = this.assignment()?.title;
           this.myGrade.set(grades.find(g => g.assignmentTitle === title) ?? null);
         }
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: err => {
         this.error.set(err?.error?.message ?? 'Failed to load assignment.');
         this.isLoading.set(false);
       },
@@ -589,7 +677,7 @@ export class AssignmentDetailComponent implements OnInit {
         );
         this.isLoading.set(false);
       },
-      error: (err) => {
+      error: err => {
         this.error.set(err?.error?.message ?? 'Failed to load assignment.');
         this.isLoading.set(false);
       },
@@ -617,10 +705,10 @@ export class AssignmentDetailComponent implements OnInit {
     const days = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
     const pill = 'inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full ';
 
-    if (diff < 0)  return { label: `Overdue by ${days(abs)}`, css: 'text-sm font-medium text-red-600',    pillCss: pill + 'bg-red-50 text-red-600',    isPast: true  };
+    if (diff < 0)   return { label: `Overdue by ${days(abs)}`, css: 'text-sm font-medium text-red-600',    pillCss: pill + 'bg-red-50 text-red-600',    isPast: true  };
     if (diff === 0) return { label: 'Due today',               css: 'text-sm font-medium text-orange-500', pillCss: pill + 'bg-amber-50 text-amber-600', isPast: false };
     if (diff <= 2)  return { label: `${days(diff)} left`,      css: 'text-sm font-medium text-amber-600',  pillCss: pill + 'bg-amber-50 text-amber-600', isPast: false };
-    return             { label: `${days(diff)} left`,          css: 'text-sm font-medium text-green-600',  pillCss: pill + 'bg-green-50 text-green-600', isPast: false };
+    return              { label: `${days(diff)} left`,         css: 'text-sm font-medium text-green-600',  pillCss: pill + 'bg-green-50 text-green-600', isPast: false };
   }
 
   private removeSavingId(id: string): void {
