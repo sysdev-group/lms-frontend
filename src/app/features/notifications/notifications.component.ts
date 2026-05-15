@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -19,6 +20,7 @@ import { Notification, NotificationPriority } from '@shared/models/models';
     MatListModule,
     MatBadgeModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatChipsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
@@ -26,63 +28,157 @@ import { Notification, NotificationPriority } from '@shared/models/models';
   ],
   template: `
     <div class="page-container">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="section-title flex items-center gap-2">
-          Notifications
-          @if (unreadCount() > 0) {
-            <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-xs font-bold text-white bg-blue-500 rounded-full">
-              {{ unreadCount() }}
-            </span>
-          }
-        </h1>
-        @if (unreadCount() > 0) {
-          <button mat-stroked-button (click)="markAllAsRead()">
-            Mark all as read
-          </button>
-        }
-      </div>
+      <div class="max-w-2xl mx-auto">
 
-      @if (isLoading()) {
-        <div class="flex justify-center py-16">
-          <mat-spinner diameter="40" />
+        <!-- Header -->
+        <div class="mb-6">
+          <h1 class="font-display text-2xl font-bold text-slate-900">Notifications</h1>
+          <p class="text-sm text-slate-500 mt-0.5">Stay on top of your activity</p>
         </div>
-      } @else if (errorMessage()) {
-        <div class="lms-card text-center py-12">
-          <mat-icon class="text-red-400 mb-3">error_outline</mat-icon>
-          <p class="text-red-600">{{ errorMessage() }}</p>
-        </div>
-      } @else if (notifications().length === 0) {
-        <div class="lms-card text-center py-12">
-          <mat-icon class="text-slate-300 mb-3" style="font-size:2.5rem;width:2.5rem;height:2.5rem">notifications_none</mat-icon>
-          <p class="text-slate-500">No notifications.</p>
-        </div>
-      } @else {
-        <ul class="space-y-2">
-          @for (n of notifications(); track n.id) {
-            <li
-              (click)="markAsRead(n)"
-              [class.bg-blue-50]="!n.isRead"
-              [class.border-blue-200]="!n.isRead"
-              class="lms-card border border-transparent cursor-pointer hover:shadow-md transition-all">
-              <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0 flex-1">
-                  <p [class.font-semibold]="!n.isRead" class="text-slate-800">{{ n.title }}</p>
-                  <p class="text-sm text-slate-500 mt-0.5">{{ n.body }}</p>
-                  <p class="text-xs text-slate-400 mt-1">{{ n.createdAt | date:'medium' }}</p>
-                </div>
-                <div class="shrink-0 flex flex-col items-end gap-2">
-                  <span [class]="priorityClass(n.priority)" class="text-xs font-medium px-2 py-0.5 rounded-full">
-                    {{ n.priority }}
-                  </span>
-                  @if (!n.isRead) {
-                    <span class="w-2 h-2 rounded-full bg-blue-500 mt-1"></span>
-                  }
+
+        <!-- Skeleton -->
+        @if (isLoading()) {
+          <div class="space-y-2">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <div class="bg-white rounded-lg border-l-4 border-l-slate-200 p-4 flex items-start gap-3 animate-pulse">
+                <div class="w-2 h-2 rounded-full bg-slate-200 mt-2 shrink-0"></div>
+                <div class="w-8 h-8 rounded-full bg-slate-200 shrink-0"></div>
+                <div class="flex-1 space-y-2 pt-0.5">
+                  <div class="h-4 bg-slate-200 rounded w-3/4"></div>
+                  <div class="h-3 bg-slate-200 rounded w-full"></div>
+                  <div class="h-3 bg-slate-200 rounded w-1/2"></div>
                 </div>
               </div>
-            </li>
-          }
-        </ul>
-      }
+              @if (i < 5) {
+                <div class="border-b border-slate-100"></div>
+              }
+            }
+          </div>
+
+        <!-- Error -->
+        } @else if (errorMessage()) {
+          <div class="lms-card text-center py-12">
+            <mat-icon class="text-red-400" style="font-size:2.5rem;width:2.5rem;height:2.5rem">error_outline</mat-icon>
+            <p class="text-red-600 mt-3">{{ errorMessage() }}</p>
+          </div>
+
+        <!-- Main content -->
+        } @else {
+
+          <!-- Action bar -->
+          <div class="flex items-center justify-between gap-4 flex-wrap mb-4">
+            <mat-button-toggle-group #filter="matButtonToggleGroup" value="all" hideSingleSelectionIndicator>
+              <mat-button-toggle value="all" class="min-h-[44px]">All</mat-button-toggle>
+              <mat-button-toggle value="unread" class="min-h-[44px]">
+                <span class="flex items-center gap-1.5">
+                  Unread
+                  @if (unreadCount() > 0) {
+                    <span class="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full leading-none">
+                      {{ unreadCount() }}
+                    </span>
+                  }
+                </span>
+              </mat-button-toggle>
+              <mat-button-toggle value="urgent" class="min-h-[44px]">High Priority</mat-button-toggle>
+            </mat-button-toggle-group>
+
+            @if (unreadCount() > 0) {
+              <button mat-stroked-button (click)="markAllAsRead()" class="min-h-[44px]">
+                Mark All as Read
+              </button>
+            }
+          </div>
+
+          <!-- Notification list -->
+          <div class="space-y-2">
+            @for (n of notifications(); track n.id) {
+              @if (
+                filter.value === 'all' ||
+                (filter.value === 'unread' && !n.isRead) ||
+                (filter.value === 'urgent' && n.priority === 'Urgent')
+              ) {
+                <div
+                  class="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow border-l-4 relative overflow-hidden"
+                  [class.bg-red-50]="n.priority === 'Urgent' && !n.isRead"
+                  [class.border-l-red-500]="n.priority === 'Urgent' && !n.isRead"
+                  [class.bg-blue-50]="!n.isRead && n.priority !== 'Urgent'"
+                  [class.border-l-blue-600]="!n.isRead && n.priority !== 'Urgent'"
+                  [class.bg-white]="n.isRead"
+                  [class.border-l-transparent]="n.isRead"
+                  (click)="markAsRead(n)">
+                  <div class="flex items-start gap-3 p-4">
+
+                    <!-- Dot indicator (always reserves space) -->
+                    <div class="mt-2 shrink-0 w-2 h-2">
+                      @if (!n.isRead && n.priority === 'Urgent') {
+                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                      } @else if (!n.isRead) {
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                      }
+                    </div>
+
+                    <!-- Avatar initial -->
+                    <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-700 text-sm font-semibold flex items-center justify-center shrink-0">
+                      {{ (n.title[0] || 'S').toUpperCase() }}
+                    </div>
+
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                      <p class="font-semibold text-slate-900 text-sm leading-snug">{{ n.title }}</p>
+                      <p class="text-sm text-slate-600 line-clamp-2 mt-0.5">{{ n.body }}</p>
+                      <p class="text-xs text-slate-400 mt-1">{{ n.createdAt | date:'MMM d, h:mm a' }}</p>
+                    </div>
+
+                    <!-- Right: badge + mark-as-read -->
+                    <div class="shrink-0 flex flex-col items-end gap-2">
+                      @if (n.priority === 'Urgent') {
+                        <span class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-medium">Urgent</span>
+                      } @else if (n.priority === 'Important') {
+                        <span class="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">Important</span>
+                      }
+                      @if (!n.isRead) {
+                        <button
+                          class="text-xs text-blue-600 hover:text-blue-800 min-h-[44px] flex items-center"
+                          (click)="$event.stopPropagation(); markAsRead(n)">
+                          Mark as Read
+                        </button>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              }
+            }
+
+            <!-- Empty state: All -->
+            @if (filter.value === 'all' && notifications().length === 0) {
+              <div class="text-center py-16">
+                <mat-icon class="text-green-400" style="font-size:3rem;width:3rem;height:3rem">check_circle</mat-icon>
+                <p class="font-display text-xl text-slate-900 mt-4">You're all caught up</p>
+                <p class="text-slate-500 text-sm mt-1">No notifications yet</p>
+              </div>
+            }
+
+            <!-- Empty state: Unread -->
+            @if (filter.value === 'unread' && unreadCount() === 0) {
+              <div class="text-center py-16">
+                <mat-icon class="text-slate-300" style="font-size:3rem;width:3rem;height:3rem">notifications_none</mat-icon>
+                <p class="text-slate-500 mt-4">No unread notifications</p>
+              </div>
+            }
+
+            <!-- Empty state: Urgent -->
+            @if (filter.value === 'urgent' && urgentCount() === 0) {
+              <div class="text-center py-16">
+                <mat-icon class="text-slate-300" style="font-size:3rem;width:3rem;height:3rem">notifications_none</mat-icon>
+                <p class="text-slate-500 mt-4">No urgent notifications</p>
+              </div>
+            }
+          </div>
+
+        }
+
+      </div>
     </div>
   `,
 })
@@ -92,6 +188,7 @@ export class NotificationsComponent implements OnInit {
   errorMessage = signal<string | null>(null);
 
   readonly unreadCount = computed(() => this.notifications().filter(n => !n.isRead).length);
+  readonly urgentCount = computed(() => this.notifications().filter(n => n.priority === 'Urgent').length);
 
   private readonly destroyRef = inject(DestroyRef);
 
