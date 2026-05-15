@@ -4,9 +4,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CourseService } from '@core/services/course.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Course } from '@shared/models/models';
+import { AssignLecturerDialogComponent } from '../assign-lecturer-dialog/assign-lecturer-dialog.component';
 
 @Component({
   selector: 'app-course-detail',
@@ -17,6 +20,8 @@ import { Course } from '@shared/models/models';
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
+    MatDialogModule,
+    MatSnackBarModule,
   ],
   template: `
     <div class="page-container">
@@ -93,11 +98,22 @@ import { Course } from '@shared/models/models';
                   <span class="text-xs font-semibold uppercase tracking-wide text-primary-600">
                     {{ c.code }}
                   </span>
-                  <span class="badge shrink-0"
-                        [class.badge-success]="!c.isArchived"
-                        [class.badge-neutral]="c.isArchived">
-                    {{ courseStatus(c) }}
-                  </span>
+                  <div class="flex items-center gap-2 shrink-0">
+                    @if (role() === 'Admin') {
+                      <button mat-stroked-button color="primary"
+                              class="min-h-[36px] text-xs"
+                              type="button"
+                              (click)="openAssignLecturerDialog(c)">
+                        <mat-icon style="font-size:16px;width:16px;height:16px">person_add</mat-icon>
+                        Assign Lecturer
+                      </button>
+                    }
+                    <span class="badge"
+                          [class.badge-success]="!c.isArchived"
+                          [class.badge-neutral]="c.isArchived">
+                      {{ courseStatus(c) }}
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Module title -->
@@ -405,6 +421,8 @@ export class CourseDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private courseService: CourseService,
     private authService: AuthService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -433,6 +451,19 @@ export class CourseDetailComponent implements OnInit {
         this.errorMessage.set('Please go back to Modules and open the module again.');
         this.isLoading.set(false);
       },
+    });
+  }
+
+  openAssignLecturerDialog(course: Course): void {
+    const ref = this.dialog.open(AssignLecturerDialogComponent, {
+      width: '480px',
+      data: { courseId: course.id, lecturerName: course.lecturerName ?? null },
+    });
+    ref.afterClosed().subscribe((assigned: boolean) => {
+      if (assigned) {
+        this.snackBar.open('Lecturer assigned successfully.', 'Dismiss', { duration: 4000 });
+        this.loadCourse();
+      }
     });
   }
 
