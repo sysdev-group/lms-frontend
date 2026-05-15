@@ -226,11 +226,19 @@ import { CourseCreateDialogComponent } from '../course-create-dialog/course-crea
                     Manage Module
                   </button>
                 } @else {
-                  <button mat-stroked-button color="primary"
-                          class="w-full min-h-[40px]"
-                          (click)="$event.stopPropagation(); navigateToCourse(course.id)">
-                    View Module
-                  </button>
+                  <div class="flex gap-2">
+                    <button mat-stroked-button color="primary"
+                            class="flex-1 min-h-[40px]"
+                            (click)="$event.stopPropagation(); navigateToCourse(course.id)">
+                      View Module
+                    </button>
+                    <button mat-icon-button color="primary"
+                            class="min-h-[40px]"
+                            title="Assign Lecturer"
+                            (click)="$event.stopPropagation(); navigateToCourse(course.id)">
+                      <mat-icon style="font-size:18px;width:18px;height:18px">person</mat-icon>
+                    </button>
+                  </div>
                 }
               </div>
             </div>
