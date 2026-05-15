@@ -8,18 +8,18 @@ export class EnrollmentService {
   constructor(private api: ApiService) {}
 
   enroll(request: EnrollStudentRequest): Observable<Enrollment> {
-    return this.api.post<Enrollment>('/enrollments', request);
+    return this.api.post<Enrollment>('/enrollment', request);
   }
 
   drop(enrollmentId: string): Observable<void> {
-    return this.api.delete<void>(`/enrollments/${enrollmentId}`);
+    return this.api.delete<void>(`/enrollment/${enrollmentId}`);
   }
 
   getStudentEnrollments(studentId: string): Observable<Enrollment[]> {
-    return this.api.get<Enrollment[]>(`/enrollments/student/${studentId}`);
+    return this.api.get<Enrollment[]>(`/enrollment/student/${studentId}`);
   }
 
   getCourseEnrollments(courseId: string): Observable<Enrollment[]> {
-    return this.api.get<Enrollment[]>(`/enrollments/course/${courseId}`);
+    return this.api.get<Enrollment[]>(`/enrollment/course/${courseId}`);
   }
 }

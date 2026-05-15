@@ -64,10 +64,7 @@ import { ProgrammeCreateDialogComponent } from '../programme-create-dialog/progr
             </div>
           }
         </div>
-      }
-
-      <!-- Error state -->
-      @else if (errorMessage()) {
+      } @else if (errorMessage()) {
         <div class="lms-card">
           <div class="flex flex-col items-center py-10 text-center">
             <div class="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
@@ -78,10 +75,7 @@ import { ProgrammeCreateDialogComponent } from '../programme-create-dialog/progr
             <p class="text-xs text-slate-400 mt-1">Check your connection and try again.</p>
           </div>
         </div>
-      }
-
-      <!-- Empty state -->
-      @else if (programmes().length === 0) {
+      } @else if (programmes().length === 0) {
         <div class="lms-card">
           <div class="flex flex-col items-center py-12 text-center">
             <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
@@ -114,10 +108,7 @@ import { ProgrammeCreateDialogComponent } from '../programme-create-dialog/progr
             }
           </div>
         </div>
-      }
-
-      <!-- Programme grid -->
-      @else {
+      } @else {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           @for (prog of programmes(); track prog.id) {
             <div class="lms-card relative overflow-hidden flex flex-col

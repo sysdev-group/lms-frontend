@@ -33,6 +33,30 @@ html, body {
   overflow-x: hidden;
 }
 
+// ─── Angular Material + Tailwind preflight compatibility ─────────────────────
+// Tailwind preflight sets legend { float: left; width: 100% } which breaks the
+// MDC notch geometry used by mat-form-field appearance="outline".
+
+.mat-mdc-form-field.mat-form-field-appearance-outline {
+  .mdc-notched-outline__notch {
+    border-right: none !important;
+  }
+}
+
+mat-form-field fieldset {
+  min-width: 0;
+}
+
+mat-form-field legend {
+  float: unset;
+  width: auto;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 // ─── Utility classes ──────────────────────────────────────────────────────────
 
 // Page wrapper — use on every feature page's root element

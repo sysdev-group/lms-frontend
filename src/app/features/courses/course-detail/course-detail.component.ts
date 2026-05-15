@@ -64,10 +64,7 @@ import { Course } from '@shared/models/models';
               </div>
             </div>
           </div>
-        }
-
-        <!-- Error state -->
-        @else if (errorMessage()) {
+        } @else if (errorMessage()) {
           <div class="lms-card text-center py-14">
             <div class="inline-flex items-center justify-center w-12 h-12
                         rounded-full bg-red-50 mb-4">
@@ -83,10 +80,7 @@ import { Course } from '@shared/models/models';
               Try again
             </button>
           </div>
-        }
-
-        <!-- Main content -->
-        @else {
+        } @else {
           @if (course(); as c) {
 
             <!-- Header card -->
