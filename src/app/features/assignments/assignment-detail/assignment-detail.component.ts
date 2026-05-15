@@ -1,15 +1,17 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { AssignmentService } from '@core/services/assignment.service';
 import { SubmissionService } from '@core/services/submission.service';
 import { GradeService } from '@core/services/grade.service';
@@ -19,6 +21,7 @@ import { Assignment, Grade, Submission } from '@shared/models/models';
 interface DeadlineInfo {
   readonly label: string;
   readonly css: string;
+  readonly pillCss: string;
   readonly isPast: boolean;
 }
 
@@ -27,264 +30,384 @@ interface SubmissionRow extends Submission {
   readonly gradeForm: FormGroup;
 }
 
-/**
- * Assignment detail page — Section 7.5 + 7.6.
- * Students see their submission status, grade (when published), and a submit form.
- * Lecturers see all submissions with inline grading controls.
- */
 @Component({
   selector: 'app-assignment-detail',
   standalone: true,
   imports: [
+    RouterLink,
     ReactiveFormsModule,
     DatePipe,
     MatProgressSpinnerModule,
+    MatProgressBarModule,
     MatIconModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatExpansionModule,
   ],
   template: `
-    <div class="page-container">
+    <div class="page-container max-w-3xl mx-auto">
 
+      <!-- Breadcrumb -->
+      <a routerLink="/assignments"
+        class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors mb-4 cursor-pointer no-underline">
+        <mat-icon style="font-size:18px;width:18px;height:18px;line-height:1">arrow_back</mat-icon>
+        Back to Assignments
+      </a>
+
+      <!-- ── Loading skeleton ──────────────────────────────────────── -->
       @if (isLoading()) {
-        <div class="flex justify-center py-16">
-          <mat-spinner diameter="40" />
+        <div class="lms-card relative overflow-hidden animate-pulse mb-4">
+          <div class="absolute inset-y-0 left-0 w-1 bg-slate-200"></div>
+          <div class="pl-3 space-y-3">
+            <div class="h-6 w-2/3 bg-slate-200 rounded"></div>
+            <div class="h-4 w-1/3 bg-slate-100 rounded"></div>
+            <div class="h-4 w-full bg-slate-100 rounded mt-2"></div>
+            <div class="h-4 w-4/5 bg-slate-100 rounded"></div>
+          </div>
+        </div>
+        <div class="lms-card animate-pulse">
+          <div class="h-4 w-1/4 bg-slate-200 rounded mb-4"></div>
+          <div class="h-32 bg-slate-100 rounded-xl"></div>
         </div>
 
+      <!-- ── Error ──────────────────────────────────────────────────── -->
       } @else if (error()) {
-        <div class="lms-card text-center py-12">
-          <mat-icon class="text-red-400 mb-3">error_outline</mat-icon>
-          <p class="text-red-600">{{ error() }}</p>
+        <div class="lms-card text-center py-16">
+          <mat-icon class="text-slate-200 mb-3" style="font-size:56px;width:56px;height:56px">
+            error_outline
+          </mat-icon>
+          <p class="text-red-600 font-medium">{{ error() }}</p>
         </div>
 
       } @else if (!assignment()) {
-        <div class="lms-card text-center py-12">
-          <mat-icon class="text-slate-300 mb-3">assignment</mat-icon>
+        <div class="lms-card text-center py-16">
+          <mat-icon class="text-slate-200 mb-3" style="font-size:56px;width:56px;height:56px">
+            assignment
+          </mat-icon>
           <p class="text-slate-500">Assignment not found.</p>
         </div>
 
       } @else {
 
-        <!-- Assignment header (all roles) -->
-        <div class="lms-card mb-6">
-          <div class="flex items-start justify-between gap-6">
-            <div class="min-w-0 flex-1">
-              <h1 class="section-title">{{ assignment()!.title }}</h1>
-              <p class="text-sm text-slate-500 -mt-3 mb-4">{{ assignment()!.courseName }}</p>
-              @if (assignment()!.description) {
-                <p class="text-slate-700 leading-relaxed">{{ assignment()!.description }}</p>
+        <!-- ── Header card ──────────────────────────────────────────── -->
+        <div class="lms-card relative overflow-hidden mb-4">
+          <div class="absolute inset-y-0 left-0 w-1 bg-primary-600"></div>
+          <div class="pl-3">
+            <div class="flex items-start justify-between gap-4 mb-3">
+              <h1 class="font-display text-2xl font-bold text-slate-900 leading-snug">
+                {{ assignment()!.title }}
+              </h1>
+              <!-- Status badge top-right -->
+              @if (deadlineInfo()!.isPast) {
+                <span class="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                  Closed
+                </span>
+              } @else {
+                <span class="shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                  Active
+                </span>
               }
             </div>
-            <div class="shrink-0 text-right space-y-1">
-              <p [class]="deadlineInfo()!.css">
+
+            <div class="flex items-center gap-1 text-sm text-slate-500 mb-3">
+              <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">book</mat-icon>
+              {{ assignment()!.courseName }}
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <span [class]="deadlineInfo()!.pillCss">
+                <mat-icon style="font-size:11px;width:11px;height:11px;line-height:1;margin-right:3px">schedule</mat-icon>
                 {{ deadlineInfo()!.label }}
-              </p>
-              <p class="text-xs text-slate-500">Max marks: {{ assignment()!.maxMarks }}</p>
+              </span>
+              <span class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                <mat-icon style="font-size:11px;width:11px;height:11px;line-height:1">grade</mat-icon>
+                Max {{ assignment()!.maxMarks }} marks
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- ── Student view ───────────────────────────────────────────────── -->
+        <!-- ── Description card ─────────────────────────────────────── -->
+        @if (assignment()!.description) {
+          <div class="lms-card mb-4">
+            <h2 class="font-display font-semibold text-slate-700 text-sm uppercase tracking-wide mb-3">
+              Description
+            </h2>
+            <p class="text-slate-700 leading-relaxed">{{ assignment()!.description }}</p>
+          </div>
+        }
+
+        <!-- ════════════════════════════════════════════════════════════
+             Student view
+             ════════════════════════════════════════════════════════════ -->
         @if (userRole() === 'Student') {
 
-          @if (mySubmission()) {
+          <!-- Graded state -->
+          @if (myGrade() && myGrade()!.isPublished) {
+            <div class="lms-card text-center py-8 mb-4">
+              <p class="font-display text-5xl font-bold text-slate-900">
+                {{ myGrade()!.marksAwarded }}
+                <span class="text-2xl text-slate-400 font-normal">/ {{ assignment()!.maxMarks }}</span>
+              </p>
+              <span [class]="gradePercentageCss(pct(myGrade()!, assignment()!.maxMarks))">
+                {{ pct(myGrade()!, assignment()!.maxMarks) }}%
+              </span>
+              @if (myGrade()!.letterGrade) {
+                <p class="mt-2 font-display text-xl font-semibold text-primary-600">
+                  {{ myGrade()!.letterGrade }}
+                </p>
+              }
+            </div>
 
-            <!-- Submitted state -->
-            <div class="lms-card space-y-4">
-              <h2 class="font-semibold text-slate-800">Your Submission</h2>
+            <mat-expansion-panel class="mb-4 rounded-xl shadow-sm border border-slate-200 !overflow-hidden">
+              <mat-expansion-panel-header>
+                <mat-panel-title class="font-semibold text-slate-700">
+                  <mat-icon class="mr-2 text-slate-400">feedback</mat-icon>
+                  Lecturer Feedback
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              @if (myGrade()!.feedback) {
+                <p class="text-slate-600 leading-relaxed">{{ myGrade()!.feedback }}</p>
+              } @else {
+                <p class="text-slate-400 italic">No feedback provided.</p>
+              }
+            </mat-expansion-panel>
 
-              <div class="flex flex-wrap gap-3 text-sm text-slate-700">
-                <span>
-                  Submitted
-                  <span class="font-medium">{{ mySubmission()!.submittedAt | date:'medium' }}</span>
-                </span>
-                @if (mySubmission()!.isLate) {
-                  <span class="badge badge-danger">Late</span>
-                } @else {
-                  <span class="badge badge-success">On time</span>
-                }
-                @if (mySubmission()!.fileName) {
-                  <span class="text-slate-500">
-                    <mat-icon class="text-sm align-middle mr-0.5">attach_file</mat-icon>
-                    {{ mySubmission()!.fileName }}
-                  </span>
-                }
-              </div>
-
-              <!-- Grade section -->
-              @if (myGrade() && myGrade()!.isPublished) {
-                <div class="pt-4 border-t border-slate-100">
-                  <h3 class="text-sm font-medium text-slate-600 mb-2">Grade</h3>
-                  <p class="text-3xl font-bold text-slate-900">
-                    {{ myGrade()!.marksAwarded }}
-                    <span class="text-xl text-slate-400">/ {{ assignment()!.maxMarks }}</span>
-                    @if (myGrade()!.letterGrade) {
-                      <span class="ml-3 text-xl font-semibold text-primary-600">
-                        {{ myGrade()!.letterGrade }}
-                      </span>
+            <!-- View submission file -->
+            @if (mySubmission()) {
+              <div class="lms-card bg-blue-50 border border-blue-200 flex items-center gap-3">
+                <mat-icon class="text-blue-500 shrink-0">check_circle</mat-icon>
+                <div class="flex-1 min-w-0">
+                  @if (mySubmission()!.fileName) {
+                    <p class="font-semibold text-slate-800 truncate">{{ mySubmission()!.fileName }}</p>
+                  }
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Submitted {{ mySubmission()!.submittedAt | date:'mediumDate' }}
+                    @if (mySubmission()!.isLate) {
+                      &nbsp;·&nbsp;
+                      <span class="text-red-600 font-medium">Late</span>
                     }
                   </p>
-                  @if (myGrade()!.feedback) {
-                    <p class="mt-2 text-sm text-slate-600">
-                      <span class="font-medium">Feedback:</span> {{ myGrade()!.feedback }}
-                    </p>
-                  }
                 </div>
-              } @else if (mySubmission()!.isGraded) {
-                <p class="text-sm text-amber-600 pt-2 border-t border-slate-100">
-                  <mat-icon class="text-sm align-middle mr-1">hourglass_empty</mat-icon>
+                <button mat-stroked-button class="min-h-[44px] shrink-0">View File</button>
+              </div>
+            }
+
+          <!-- Submitted but not yet graded -->
+          } @else if (mySubmission()) {
+
+            <div class="lms-card">
+              <h2 class="font-display font-semibold text-slate-700 mb-3">Your Submission</h2>
+
+              <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-3 mb-4">
+                <mat-icon class="text-blue-500 shrink-0">check_circle</mat-icon>
+                <div class="flex-1 min-w-0">
+                  @if (mySubmission()!.fileName) {
+                    <p class="font-semibold text-slate-800 truncate">{{ mySubmission()!.fileName }}</p>
+                  } @else {
+                    <p class="font-semibold text-slate-800">Submission received</p>
+                  }
+                  <p class="text-xs text-slate-500 mt-0.5">
+                    Submitted {{ mySubmission()!.submittedAt | date:'medium' }}
+                    @if (mySubmission()!.isLate) {
+                      &nbsp;·&nbsp;<span class="text-red-600 font-medium">Late</span>
+                    }
+                  </p>
+                </div>
+                <button mat-stroked-button class="min-h-[44px] shrink-0">View File</button>
+              </div>
+
+              @if (mySubmission()!.isGraded) {
+                <p class="text-sm text-amber-600 flex items-center gap-1">
+                  <mat-icon style="font-size:16px;width:16px;height:16px;line-height:1">hourglass_empty</mat-icon>
                   Grade is ready but not yet published by your lecturer.
                 </p>
               } @else {
-                <p class="text-sm text-slate-500 pt-2 border-t border-slate-100">
-                  <mat-icon class="text-sm align-middle mr-1">pending</mat-icon>
+                <p class="text-sm text-slate-500 flex items-center gap-1">
+                  <mat-icon style="font-size:16px;width:16px;height:16px;line-height:1">pending</mat-icon>
                   Not yet graded.
                 </p>
               }
             </div>
 
+          <!-- Not submitted -->
           } @else {
-
-            <!-- Submit form -->
             <div class="lms-card">
-              <h2 class="font-semibold text-slate-800 mb-4">Submit Assignment</h2>
+              <h2 class="font-display font-semibold text-slate-700 mb-4">Submit Assignment</h2>
 
               @if (deadlineInfo()!.isPast) {
                 <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2 text-sm text-red-700">
-                  <mat-icon class="shrink-0 text-base">warning</mat-icon>
+                  <mat-icon class="shrink-0" style="font-size:18px;width:18px;height:18px;line-height:1.4">warning</mat-icon>
                   The deadline has passed. Submissions are no longer accepted.
                 </div>
               }
 
-              <form [formGroup]="submitForm" (ngSubmit)="submitAssignment()" class="space-y-4">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>File ID (optional)</mat-label>
-                  <input matInput formControlName="fileId"
-                    placeholder="Paste the file ID returned by the upload service" />
-                  <mat-hint>Upload your file separately and paste the returned ID here.</mat-hint>
-                </mat-form-field>
+              <!-- Upload zone -->
+              <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 p-6 mb-4">
+                <div class="flex flex-col items-center text-center mb-4 pointer-events-none">
+                  <mat-icon class="text-slate-300 mb-2" style="font-size:44px;width:44px;height:44px">cloud_upload</mat-icon>
+                  <p class="text-slate-500 font-medium">Drop your file here or click to browse</p>
+                  <p class="text-xs text-slate-400 mt-1">Accepted: PDF, DOC, DOCX, ZIP</p>
+                </div>
+                <form [formGroup]="submitForm" (ngSubmit)="submitAssignment()">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>File ID</mat-label>
+                    <input matInput formControlName="fileId"
+                      placeholder="Paste the file ID returned by the upload service" />
+                    <mat-hint>Upload your file and paste the returned ID here.</mat-hint>
+                  </mat-form-field>
 
-                @if (submitError()) {
-                  <p class="text-sm text-red-600">{{ submitError() }}</p>
-                }
-
-                <button mat-flat-button color="primary" type="submit"
-                  [disabled]="deadlineInfo()!.isPast || isSubmitting()">
-                  @if (isSubmitting()) {
-                    <mat-spinner diameter="18" class="inline-block mr-2" />
-                    Submitting…
-                  } @else {
-                    Submit Assignment
+                  @if (submitError()) {
+                    <p class="text-sm text-red-600 mt-2">{{ submitError() }}</p>
                   }
-                </button>
-              </form>
-            </div>
 
+                  <button mat-flat-button color="primary" type="submit"
+                    class="w-full min-h-[44px] mt-4"
+                    [disabled]="deadlineInfo()!.isPast || isSubmitting()">
+                    @if (isSubmitting()) {
+                      <mat-spinner diameter="18" class="inline-block mr-2"></mat-spinner>
+                      Submitting…
+                    } @else {
+                      Submit Assignment
+                    }
+                  </button>
+                </form>
+              </div>
+            </div>
           }
 
-        <!-- ── Lecturer / Admin view ──────────────────────────────────────── -->
+        <!-- ════════════════════════════════════════════════════════════
+             Lecturer / Admin view
+             ════════════════════════════════════════════════════════════ -->
         } @else if (userRole() === 'Lecturer' || userRole() === 'Admin') {
 
-          <div class="lms-card">
-            <h2 class="font-semibold text-slate-800 mb-4">
-              Submissions
-              <span class="ml-2 text-sm font-normal text-slate-500">
-                ({{ allSubmissions().length }})
+          <!-- Submission summary -->
+          <div class="lms-card mb-4">
+            <div class="flex items-baseline justify-between mb-2">
+              <h2 class="font-display font-semibold text-slate-700">Submissions</h2>
+              <span class="text-sm text-slate-500">
+                {{ allSubmissions().length }} submitted
               </span>
-            </h2>
-
-            @if (allSubmissions().length === 0) {
-              <div class="text-center py-10">
-                <mat-icon class="text-slate-300 mb-2">inbox</mat-icon>
-                <p class="text-slate-500">No submissions yet.</p>
-              </div>
-
-            } @else {
-              <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left border-collapse">
-                  <thead>
-                    <tr class="border-b border-slate-200">
-                      <th class="pb-3 pr-4 text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Student
-                      </th>
-                      <th class="pb-3 pr-4 text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Submitted At
-                      </th>
-                      <th class="pb-3 pr-4 text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Status
-                      </th>
-                      <th class="pb-3 text-xs font-medium text-slate-500 uppercase tracking-wide">
-                        Grading
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    @for (row of allSubmissions(); track row.id) {
-                      <tr>
-                        <td class="py-4 pr-4 font-medium text-slate-800">
-                          {{ row.studentName }}
-                        </td>
-                        <td class="py-4 pr-4 text-slate-600">
-                          {{ row.submittedAt | date:'medium' }}
-                        </td>
-                        <td class="py-4 pr-4">
-                          @if (row.isLate) {
-                            <span class="badge badge-danger">Late</span>
-                          } @else {
-                            <span class="badge badge-success">On time</span>
-                          }
-                        </td>
-                        <td class="py-4">
-                          <div [formGroup]="row.gradeForm" class="flex flex-wrap items-end gap-2">
-
-                            @if (row.isGraded && !row.gradeId) {
-                              <span class="badge badge-info mr-1">Graded</span>
-                            }
-
-                            <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                              class="w-24 shrink-0">
-                              <mat-label>Mark</mat-label>
-                              <input matInput type="number" formControlName="marks"
-                                min="0" [max]="assignment()!.maxMarks" />
-                            </mat-form-field>
-
-                            <mat-form-field appearance="outline" subscriptSizing="dynamic"
-                              class="flex-1 min-w-[160px]">
-                              <mat-label>Feedback</mat-label>
-                              <input matInput formControlName="feedback"
-                                placeholder="Optional feedback" />
-                            </mat-form-field>
-
-                            <button mat-flat-button color="primary"
-                              [disabled]="row.gradeForm.invalid || savingIds().has(row.id)"
-                              (click)="saveGrade(row)">
-                              @if (savingIds().has(row.id)) {
-                                <mat-spinner diameter="16" class="inline-block mr-1" />
-                              }
-                              {{ row.isGraded ? 'Re-grade' : 'Save' }}
-                            </button>
-
-                            @if (row.gradeId) {
-                              <button mat-stroked-button color="accent"
-                                [disabled]="savingIds().has(row.id)"
-                                (click)="publishGrade(row.gradeId, row.id)">
-                                @if (savingIds().has(row.id)) {
-                                  <mat-spinner diameter="16" class="inline-block mr-1" />
-                                }
-                                Publish
-                              </button>
-                            }
-
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
+            </div>
+            <mat-progress-bar
+              mode="determinate"
+              [value]="allSubmissions().length > 0 ? 100 : 0"
+              class="rounded-full h-2 mb-3">
+            </mat-progress-bar>
+            <div class="flex flex-wrap gap-4 text-xs text-slate-500">
+              <span>
+                <span class="font-semibold text-slate-700">{{ gradedCount() }}</span> graded
+              </span>
+              <span>
+                <span class="font-semibold text-slate-700">{{ publishedCount() }}</span> published
+              </span>
+              <span>
+                <span class="font-semibold text-slate-700">{{ allSubmissions().length - gradedCount() }}</span> awaiting grade
+              </span>
+            </div>
           </div>
+
+          <!-- Submission cards -->
+          @if (allSubmissions().length === 0) {
+            <div class="lms-card text-center py-12">
+              <mat-icon class="text-slate-200 mb-3" style="font-size:56px;width:56px;height:56px">inbox</mat-icon>
+              <p class="text-slate-500 font-medium">No submissions yet</p>
+              <p class="text-sm text-slate-400 mt-1">Student submissions will appear here.</p>
+            </div>
+          } @else {
+            <div class="space-y-3">
+              @for (row of allSubmissions(); track row.id) {
+                <div class="lms-card relative overflow-hidden">
+                  <div class="absolute inset-y-0 left-0 w-1 bg-primary-600"></div>
+                  <div class="pl-3">
+
+                    <!-- Student info row -->
+                    <div class="flex items-start gap-3 mb-3">
+                      <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-semibold text-sm shrink-0">
+                        {{ row.studentName.charAt(0).toUpperCase() }}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                          <p class="font-semibold text-slate-800">{{ row.studentName }}</p>
+                          @if (row.isGraded) {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                              Graded
+                            </span>
+                          } @else {
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                              Not graded
+                            </span>
+                          }
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                          Submitted {{ row.submittedAt | date:'mediumDate' }}
+                          @if (row.isLate) {
+                            &nbsp;·&nbsp;<span class="text-red-600 font-medium">Late</span>
+                          }
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- File -->
+                    @if (row.fileName) {
+                      <div class="flex items-center gap-1 text-sm text-slate-600 mb-3">
+                        <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
+                        <span class="underline cursor-pointer hover:text-primary-600 transition-colors">
+                          {{ row.fileName }}
+                        </span>
+                      </div>
+                    }
+
+                    <!-- Grade form -->
+                    <div [formGroup]="row.gradeForm" class="flex flex-wrap items-end gap-2">
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="w-24 shrink-0">
+                        <mat-label>Mark</mat-label>
+                        <input matInput type="number" formControlName="marks"
+                          min="0" [max]="assignment()!.maxMarks" />
+                      </mat-form-field>
+
+                      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="flex-1 min-w-[160px]">
+                        <mat-label>Feedback</mat-label>
+                        <input matInput formControlName="feedback" placeholder="Optional feedback" />
+                      </mat-form-field>
+
+                      <button mat-flat-button color="primary" class="min-h-[44px]"
+                        [disabled]="row.gradeForm.invalid || savingIds().has(row.id)"
+                        (click)="saveGrade(row)">
+                        @if (savingIds().has(row.id)) {
+                          <mat-spinner diameter="16" class="inline-block mr-1"></mat-spinner>
+                        }
+                        {{ row.isGraded ? 'Re-grade' : 'Save' }}
+                      </button>
+
+                      @if (row.gradeId) {
+                        <button mat-stroked-button color="accent" class="min-h-[44px]"
+                          [disabled]="savingIds().has(row.id)"
+                          (click)="publishGrade(row.gradeId, row.id)">
+                          @if (savingIds().has(row.id)) {
+                            <mat-spinner diameter="16" class="inline-block mr-1"></mat-spinner>
+                          }
+                          Publish
+                        </button>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Publish All Grades -->
+            @if (hasPublishableGrades()) {
+              <button mat-flat-button color="warn"
+                class="w-full min-h-[44px] mt-6"
+                (click)="publishAllGrades()">
+                <mat-icon>publish</mat-icon>
+                Publish All Grades
+              </button>
+            }
+          }
 
         }
       }
@@ -306,6 +429,10 @@ export class AssignmentDetailComponent implements OnInit {
   readonly userRole = this.authService.userRole;
   readonly submitForm: FormGroup;
 
+  readonly gradedCount = computed(() => this.allSubmissions().filter(r => r.isGraded).length);
+  readonly publishedCount = computed(() => this.allSubmissions().filter(r => r.gradeId !== null).length);
+  readonly hasPublishableGrades = computed(() => this.allSubmissions().some(r => r.gradeId !== null));
+
   private readonly destroyRef = inject(DestroyRef);
   private assignmentId = '';
 
@@ -326,9 +453,20 @@ export class AssignmentDetailComponent implements OnInit {
     if (this.authService.userRole() === 'Student') {
       this.loadStudentView();
     } else {
-      // Lecturer and Admin both use the submission table view
       this.loadLecturerView();
     }
+  }
+
+  pct(grade: Grade, maxMarks: number): number {
+    return Math.round((grade.marksAwarded / maxMarks) * 100);
+  }
+
+  gradePercentageCss(percentage: number): string {
+    const base = 'mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold font-display ';
+    if (percentage >= 70) return base + 'bg-green-100 text-green-700';
+    if (percentage >= 60) return base + 'bg-blue-100 text-blue-700';
+    if (percentage >= 40) return base + 'bg-amber-100 text-amber-700';
+    return base + 'bg-red-100 text-red-700';
   }
 
   submitAssignment(): void {
@@ -380,6 +518,12 @@ export class AssignmentDetailComponent implements OnInit {
       });
   }
 
+  publishAllGrades(): void {
+    this.allSubmissions()
+      .filter(r => r.gradeId != null && !this.savingIds().has(r.id))
+      .forEach(r => this.publishGrade(r.gradeId!, r.id));
+  }
+
   private loadStudentView(): void {
     forkJoin([
       this.assignmentService.getAssignmentById(this.assignmentId),
@@ -391,7 +535,6 @@ export class AssignmentDetailComponent implements OnInit {
         this.deadlineInfo.set(this.buildDeadlineInfo(assignment.deadline));
         const mine = submissions.find(s => s.assignmentId === this.assignmentId) ?? null;
         this.mySubmission.set(mine);
-        // Grade matched by title — Grade.assignmentId is not exposed by the API yet.
         return mine?.isGraded
           ? this.gradeService.getGradesByStudent('me').pipe(catchError(() => of(null)))
           : of(null);
@@ -472,10 +615,12 @@ export class AssignmentDetailComponent implements OnInit {
     const diff = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     const abs = Math.abs(diff);
     const days = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
-    if (diff < 0)  return { label: `Overdue by ${days(abs)}`, css: 'text-sm font-medium text-red-600',   isPast: true  };
-    if (diff === 0) return { label: 'Due today',               css: 'text-sm font-medium text-orange-500', isPast: false };
-    if (diff <= 3)  return { label: `${days(diff)} left`,       css: 'text-sm font-medium text-amber-600', isPast: false };
-    return             { label: `${days(diff)} left`,           css: 'text-sm font-medium text-green-600', isPast: false };
+    const pill = 'inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full ';
+
+    if (diff < 0)  return { label: `Overdue by ${days(abs)}`, css: 'text-sm font-medium text-red-600',    pillCss: pill + 'bg-red-50 text-red-600',    isPast: true  };
+    if (diff === 0) return { label: 'Due today',               css: 'text-sm font-medium text-orange-500', pillCss: pill + 'bg-amber-50 text-amber-600', isPast: false };
+    if (diff <= 2)  return { label: `${days(diff)} left`,      css: 'text-sm font-medium text-amber-600',  pillCss: pill + 'bg-amber-50 text-amber-600', isPast: false };
+    return             { label: `${days(diff)} left`,          css: 'text-sm font-medium text-green-600',  pillCss: pill + 'bg-green-50 text-green-600', isPast: false };
   }
 
   private removeSavingId(id: string): void {
