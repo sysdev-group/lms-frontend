@@ -315,3 +315,33 @@ export interface StudentAttendanceSummary {
   attendancePercentage: number;
   belowWarningThreshold: boolean;
 }
+
+// ─── Programmes ───────────────────────────────────────────────────────────────
+
+export interface Programme {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  department: string;
+  year: number;
+  courseCount: number;
+  createdAt: string;
+}
+
+export interface ProgrammeList {
+  id: string;
+  code: string;
+  title: string;
+  department: string;
+  year: number;
+  courseCount: number;
+}
+
+export interface CreateProgrammeRequest {
+  code: string;
+  title: string;
+  description?: string;
+  department: string;
+  year: number;
+}

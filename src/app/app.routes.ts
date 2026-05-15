@@ -36,6 +36,20 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
+        path: 'programmes',
+        loadComponent: () =>
+          import('./features/programmes/programme-list/programme-list.component')
+            .then(m => m.ProgrammeListComponent),
+        canActivate: [authGuard],
+      },
+      {
+        path: 'programmes/:id',
+        loadComponent: () =>
+          import('./features/programmes/programme-detail/programme-detail.component')
+            .then(m => m.ProgrammeDetailComponent),
+        canActivate: [authGuard],
+      },
+      {
         path: 'courses',
         loadChildren: () =>
           import('./features/courses/courses.routes').then(m => m.COURSE_ROUTES),

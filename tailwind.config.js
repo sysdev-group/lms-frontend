@@ -22,6 +22,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui"],
+        display: ["Plus Jakarta Sans", "Inter", "ui-sans-serif", "system-ui"],
       },
     },
   },
