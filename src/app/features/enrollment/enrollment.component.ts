@@ -137,7 +137,7 @@ import {
               <form [formGroup]="enrollForm" (ngSubmit)="onEnroll()" class="flex flex-col gap-4 mt-2">
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Course</mat-label>
+                  <mat-label>Module</mat-label>
                   <mat-select formControlName="courseId">
                     @for (c of courses(); track c.id) {
                       <mat-option [value]="c.id">{{ c.code }} — {{ c.title }}</mat-option>
@@ -178,7 +178,7 @@ import {
 
         <!-- Course enrollment list (shown once a course is selected) -->
         @if (selectedCourseId()) {
-          <h2 class="font-semibold text-slate-700 mb-3">Enrolled Students</h2>
+          <h2 class="font-display font-semibold text-slate-700 mb-3">Enrolled Students</h2>
 
           @if (listLoading()) {
             <div class="flex justify-center py-8">

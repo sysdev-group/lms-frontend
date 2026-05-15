@@ -1,11 +1,16 @@
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
 import { GradeService } from '@core/services/grade.service';
 import { AuthService } from '@core/auth/auth.service';
 import { Grade } from '@shared/models/models';
 import { GradesComponent } from './grades.component';
+import { GradingComponent } from './grading.component';
+
+// Stub replaces GradingComponent so its full DI tree is not required in these tests
+@Component({ selector: 'app-grading', standalone: true, template: '' })
+class GradingStub {}
 
 const makeGrade = (overrides: Partial<Grade> = {}): Grade => ({
   id: 'grade-1',
@@ -18,9 +23,33 @@ const makeGrade = (overrides: Partial<Grade> = {}): Grade => ({
   ...overrides,
 });
 
-const routeWithCourse = (courseId: string | null) => ({
-  snapshot: { queryParamMap: { get: () => courseId } },
-});
+const configureStudentTB = (gradeService: jasmine.SpyObj<GradeService>) =>
+  TestBed.configureTestingModule({
+    imports: [GradesComponent],
+    providers: [
+      provideRouter([]),
+      { provide: GradeService, useValue: gradeService },
+      { provide: AuthService, useValue: { userRole: signal('Student') } },
+    ],
+  }).overrideComponent(GradesComponent, {
+    remove: { imports: [GradingComponent] },
+    add: { imports: [GradingStub] },
+  });
+
+const configureLecturerTB = (gradeService: jasmine.SpyObj<GradeService>) =>
+  TestBed.configureTestingModule({
+    imports: [GradesComponent],
+    providers: [
+      provideRouter([]),
+      { provide: GradeService, useValue: gradeService },
+      { provide: AuthService, useValue: { userRole: signal('Lecturer') } },
+    ],
+  }).overrideComponent(GradesComponent, {
+    remove: { imports: [GradingComponent] },
+    add: { imports: [GradingStub] },
+  });
+
+// ─── Student view ──────────────────────────────────────────────────────────────
 
 describe('GradesComponent — Student view', () => {
   let component: GradesComponent;
@@ -33,15 +62,7 @@ describe('GradesComponent — Student view', () => {
     gradeService = jasmine.createSpyObj('GradeService', ['getGradesByStudent', 'getGradesByCourse']);
     gradeService.getGradesByStudent.and.returnValue(subject.asObservable());
 
-    await TestBed.configureTestingModule({
-      imports: [GradesComponent],
-      providers: [
-        provideRouter([]),
-        { provide: GradeService, useValue: gradeService },
-        { provide: AuthService, useValue: { userRole: signal('Student') } },
-        { provide: ActivatedRoute, useValue: routeWithCourse(null) },
-      ],
-    }).compileComponents();
+    await configureStudentTB(gradeService).compileComponents();
 
     fixture = TestBed.createComponent(GradesComponent);
     component = fixture.componentInstance;
@@ -70,22 +91,25 @@ describe('GradesComponent — Student view', () => {
     expect(component.grades().length).toBe(1);
   });
 
-  it('filters out unpublished grades', () => {
+  it('stores all returned grades, including unpublished (pending state displayed in template)', () => {
     fixture.detectChanges();
     subject.next([
       makeGrade({ id: 'g1', isPublished: true }),
       makeGrade({ id: 'g2', isPublished: false }),
     ]);
     subject.complete();
-    expect(component.grades().length).toBe(1);
-    expect(component.grades()[0].id).toBe('g1');
+    expect(component.grades().length).toBe(2);
   });
 
-  it('keeps no grades when all are unpublished', () => {
+  it('gradedCount reflects only published grades', () => {
     fixture.detectChanges();
-    subject.next([makeGrade({ isPublished: false })]);
+    subject.next([
+      makeGrade({ id: 'g1', isPublished: true }),
+      makeGrade({ id: 'g2', isPublished: false }),
+    ]);
     subject.complete();
-    expect(component.grades().length).toBe(0);
+    expect(component.gradedCount()).toBe(1);
+    expect(component.pendingCount()).toBe(1);
   });
 
   it('sets error and clears isLoading on failure', () => {
@@ -101,32 +125,29 @@ describe('GradesComponent — Student view', () => {
     expect(component.error()).toBe('Failed to load grades.');
   });
 
-  it('noCourseSelected stays false for students', () => {
+  it('passedCount counts A-grade (non-F) grades among published ones', () => {
     fixture.detectChanges();
-    expect(component.noCourseSelected()).toBeFalse();
+    subject.next([
+      makeGrade({ id: 'g1', isPublished: true, letterGrade: 'A' }),
+      makeGrade({ id: 'g2', isPublished: true, letterGrade: 'F' }),
+    ]);
+    subject.complete();
+    expect(component.passedCount()).toBe(1);
+    expect(component.failedCount()).toBe(1);
   });
 });
 
-describe('GradesComponent — Lecturer view with courseId', () => {
+// ─── Lecturer view ────────────────────────────────────────────────────────────
+
+describe('GradesComponent — Lecturer view', () => {
   let component: GradesComponent;
   let fixture: ComponentFixture<GradesComponent>;
   let gradeService: jasmine.SpyObj<GradeService>;
-  let subject: Subject<Grade[]>;
 
   beforeEach(async () => {
-    subject = new Subject<Grade[]>();
     gradeService = jasmine.createSpyObj('GradeService', ['getGradesByStudent', 'getGradesByCourse']);
-    gradeService.getGradesByCourse.and.returnValue(subject.asObservable());
 
-    await TestBed.configureTestingModule({
-      imports: [GradesComponent],
-      providers: [
-        provideRouter([]),
-        { provide: GradeService, useValue: gradeService },
-        { provide: AuthService, useValue: { userRole: signal('Lecturer') } },
-        { provide: ActivatedRoute, useValue: routeWithCourse('course-abc') },
-      ],
-    }).compileComponents();
+    await configureLecturerTB(gradeService).compileComponents();
 
     fixture = TestBed.createComponent(GradesComponent);
     component = fixture.componentInstance;
@@ -137,82 +158,13 @@ describe('GradesComponent — Lecturer view with courseId', () => {
     expect(component).toBeTruthy();
   });
 
-  it('calls getGradesByCourse with the courseId from the query param', () => {
+  it('does not call grade service for Lecturer (grading is handled by GradingComponent)', () => {
     fixture.detectChanges();
-    expect(gradeService.getGradesByCourse).toHaveBeenCalledWith('course-abc');
-  });
-
-  it('isLoading is true while request is in flight', () => {
-    fixture.detectChanges();
-    expect(component.isLoading()).toBeTrue();
-  });
-
-  it('sets grades and clears isLoading on success', () => {
-    fixture.detectChanges();
-    subject.next([makeGrade(), makeGrade({ id: 'grade-2', isPublished: false })]);
-    subject.complete();
-    expect(component.isLoading()).toBeFalse();
-    expect(component.grades().length).toBe(2);
-  });
-
-  it('does not filter out unpublished grades in lecturer view', () => {
-    fixture.detectChanges();
-    subject.next([makeGrade({ isPublished: false })]);
-    subject.complete();
-    expect(component.grades()[0].isPublished).toBeFalse();
-  });
-
-  it('sets error and clears isLoading on failure', () => {
-    fixture.detectChanges();
-    subject.error({ error: { message: 'Not found' } });
-    expect(component.isLoading()).toBeFalse();
-    expect(component.error()).toBe('Not found');
-  });
-
-  it('noCourseSelected stays false when courseId is present', () => {
-    fixture.detectChanges();
-    expect(component.noCourseSelected()).toBeFalse();
-  });
-});
-
-describe('GradesComponent — Lecturer view without courseId', () => {
-  let component: GradesComponent;
-  let fixture: ComponentFixture<GradesComponent>;
-  let gradeService: jasmine.SpyObj<GradeService>;
-
-  beforeEach(async () => {
-    gradeService = jasmine.createSpyObj('GradeService', ['getGradesByStudent', 'getGradesByCourse']);
-
-    await TestBed.configureTestingModule({
-      imports: [GradesComponent],
-      providers: [
-        provideRouter([]),
-        { provide: GradeService, useValue: gradeService },
-        { provide: AuthService, useValue: { userRole: signal('Lecturer') } },
-        { provide: ActivatedRoute, useValue: routeWithCourse(null) },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(GradesComponent);
-    component = fixture.componentInstance;
-  });
-
-  it('should be created', () => {
-    fixture.detectChanges();
-    expect(component).toBeTruthy();
-  });
-
-  it('sets noCourseSelected when no courseId query param is present', () => {
-    fixture.detectChanges();
-    expect(component.noCourseSelected()).toBeTrue();
-  });
-
-  it('does not call getGradesByCourse when courseId is absent', () => {
-    fixture.detectChanges();
+    expect(gradeService.getGradesByStudent).not.toHaveBeenCalled();
     expect(gradeService.getGradesByCourse).not.toHaveBeenCalled();
   });
 
-  it('isLoading stays false when courseId is absent', () => {
+  it('isLoading stays false for Lecturer', () => {
     fixture.detectChanges();
     expect(component.isLoading()).toBeFalse();
   });

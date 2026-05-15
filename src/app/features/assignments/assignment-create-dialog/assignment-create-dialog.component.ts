@@ -73,14 +73,14 @@ function futureDateValidator(control: AbstractControl): ValidationErrors | null 
         </mat-form-field>
 
         <mat-form-field appearance="outline">
-          <mat-label>Course</mat-label>
+          <mat-label>Module</mat-label>
           <mat-select formControlName="courseId">
             @for (course of courses(); track course.id) {
               <mat-option [value]="course.id">{{ course.code }} — {{ course.title }}</mat-option>
             }
           </mat-select>
           @if (form.controls.courseId.touched && form.controls.courseId.hasError('required')) {
-            <mat-error>Course is required.</mat-error>
+            <mat-error>Module is required.</mat-error>
           }
         </mat-form-field>
 

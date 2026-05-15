@@ -86,7 +86,7 @@ export class ConfirmDialogComponent {
             </div>
 
             <div class="flex-1 min-w-0">
-              <h1 class="text-xl font-bold text-slate-800">
+              <h1 class="font-display text-xl font-bold text-slate-800">
                 {{ user()!.firstName }} {{ user()!.lastName }}
               </h1>
               <p class="text-slate-500 text-sm mt-0.5">{{ user()!.email }}</p>
@@ -114,7 +114,7 @@ export class ConfirmDialogComponent {
 
         <!-- Edit form -->
         <div class="lms-card mb-4">
-          <h2 class="text-base font-semibold text-slate-700 mb-4">Edit Profile</h2>
+          <h2 class="font-display text-base font-semibold text-slate-700 mb-4">Edit Profile</h2>
 
           @if (saveSuccess()) {
             <div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200">
@@ -179,7 +179,7 @@ export class ConfirmDialogComponent {
 
         <!-- Account actions -->
         <div class="lms-card">
-          <h2 class="text-base font-semibold text-slate-700 mb-4">Account Actions</h2>
+          <h2 class="font-display text-base font-semibold text-slate-700 mb-4">Account Actions</h2>
           <div class="flex flex-col gap-4">
 
             <!-- Password reset -->

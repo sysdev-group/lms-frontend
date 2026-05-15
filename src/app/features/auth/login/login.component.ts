@@ -7,18 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '@core/auth/auth.service';
+import { environment } from '@env/environment';
 
-/**
- * Login page — the WORKED EXAMPLE component.
- *
- * Patterns demonstrated here that every other component should follow:
- *   - Standalone component with explicit imports array
- *   - Reactive forms with validation
- *   - Signals for local UI state (isLoading, showPassword, errorMessage)
- *   - Service call in ngSubmit handler with error handling
- *   - Template uses Tailwind for layout, Angular Material for form fields
- *   - No logic in the template — all in the class
- */
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -32,109 +22,145 @@ import { AuthService } from '@core/auth/auth.service';
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div class="w-full max-w-sm">
+    <div class="flex min-h-screen">
 
-        <!-- Logo / Title -->
-        <div class="text-center mb-8">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-600 mb-4 shadow-md">
-            <mat-icon style="font-size:32px;width:32px;height:32px;color:white">school</mat-icon>
+      <!-- ── Left column (hidden on mobile) ── -->
+      <div class="hidden lg:flex flex-col w-1/2 min-h-screen bg-slate-900 items-center justify-center p-12 relative">
+
+        <!-- Brand block -->
+        <div class="flex flex-col items-center text-center">
+          <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
+            <mat-icon class="text-white" style="font-size:22px;width:22px;height:22px">school</mat-icon>
           </div>
-          <h1 class="text-2xl font-bold text-slate-800">Modern Modular LMS</h1>
-          <p class="text-slate-500 mt-1 text-sm">Sign in to your account</p>
+          <p class="font-display text-2xl text-white font-bold mt-4">LMS</p>
+          <p class="text-slate-400 text-sm mt-1">Your learning. Organised.</p>
         </div>
 
-        <!-- Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <!-- Feature list -->
+        <div class="mt-12 flex flex-col gap-6">
+          <div class="flex items-center">
+            <mat-icon class="text-blue-400 mr-3 shrink-0" style="font-size:20px;width:20px;height:20px">book</mat-icon>
+            <span class="text-slate-300 text-sm">Access your modules and assignments</span>
+          </div>
+          <div class="flex items-center">
+            <mat-icon class="text-blue-400 mr-3 shrink-0" style="font-size:20px;width:20px;height:20px">trending_up</mat-icon>
+            <span class="text-slate-300 text-sm">Track attendance and grades</span>
+          </div>
+          <div class="flex items-center">
+            <mat-icon class="text-blue-400 mr-3 shrink-0" style="font-size:20px;width:20px;height:20px">notifications</mat-icon>
+            <span class="text-slate-300 text-sm">Stay on top of deadlines</span>
+          </div>
+        </div>
+
+        <!-- University name -->
+        <p class="absolute bottom-8 text-slate-600 text-xs">Villa College — UWE Bristol</p>
+      </div>
+
+      <!-- ── Right column ── -->
+      <div class="flex flex-col min-h-screen w-full lg:w-1/2 bg-white items-center justify-center p-8">
+        <div class="max-w-sm w-full">
+
+          <!-- Heading -->
+          <h1 class="font-display text-2xl text-slate-900 font-bold">Welcome back</h1>
+          <p class="text-slate-500 text-sm mt-1 mb-8">Sign in to your account</p>
+
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
 
-            <!-- Error message -->
-            @if (errorMessage()) {
-              <div class="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
-                <mat-icon style="font-size:18px;width:18px;height:18px" class="text-red-500 shrink-0">error_outline</mat-icon>
-                <p class="text-sm text-red-700">{{ errorMessage() }}</p>
-              </div>
-            }
-
             <!-- Email -->
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">Email address</label>
-              <div class="relative">
-                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  style="font-size:20px;width:20px;height:20px">email</mat-icon>
-                <input type="email" formControlName="email" autocomplete="email"
-                  placeholder="you@example.com"
-                  class="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm
-                         text-slate-800 placeholder-slate-400 bg-white
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
-              </div>
-              @if (loginForm.get('email')?.hasError('required') && loginForm.get('email')?.touched) {
-                <p class="mt-1 text-xs text-red-600">Email is required</p>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Email address</mat-label>
+              <mat-icon matPrefix class="text-slate-400 mr-1" style="font-size:18px;width:18px;height:18px">email</mat-icon>
+              <input matInput type="email" formControlName="email" autocomplete="email" />
+              @if (loginForm.get('email')?.hasError('required')) {
+                <mat-error>Email is required</mat-error>
               }
-              @if (loginForm.get('email')?.hasError('email') && loginForm.get('email')?.touched) {
-                <p class="mt-1 text-xs text-red-600">Enter a valid email address</p>
+              @if (loginForm.get('email')?.hasError('email')) {
+                <mat-error>Enter a valid email address</mat-error>
               }
-            </div>
+            </mat-form-field>
 
             <!-- Password -->
-            <div class="mb-5">
-              <label class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
-              <div class="relative">
-                <mat-icon class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  style="font-size:20px;width:20px;height:20px">lock</mat-icon>
-                <input [type]="showPassword() ? 'text' : 'password'"
-                  formControlName="password" autocomplete="current-password"
-                  placeholder="••••••••"
-                  class="w-full pl-10 pr-12 py-2.5 border border-slate-300 rounded-lg text-sm
-                         text-slate-800 placeholder-slate-400 bg-white
-                         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
-                <button type="button" (click)="showPassword.set(!showPassword())"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
-                  <mat-icon style="font-size:20px;width:20px;height:20px">
-                    {{ showPassword() ? 'visibility_off' : 'visibility' }}
-                  </mat-icon>
-                </button>
-              </div>
-              @if (loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched) {
-                <p class="mt-1 text-xs text-red-600">Password is required</p>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Password</mat-label>
+              <mat-icon matPrefix class="text-slate-400 mr-1" style="font-size:18px;width:18px;height:18px">lock</mat-icon>
+              <input matInput [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password" autocomplete="current-password" />
+              <button mat-icon-button matSuffix type="button"
+                (click)="showPassword.set(!showPassword())"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+                <mat-icon style="font-size:18px;width:18px;height:18px">
+                  {{ showPassword() ? 'visibility_off' : 'visibility' }}
+                </mat-icon>
+              </button>
+              @if (loginForm.get('password')?.hasError('required')) {
+                <mat-error>Password is required</mat-error>
               }
-            </div>
+            </mat-form-field>
 
             <!-- Forgot password -->
-            <div class="text-right mb-6">
+            <div class="text-right text-sm -mt-2 mb-6">
               <a routerLink="/auth/forgot-password"
-                class="text-sm text-blue-600 hover:text-blue-700 font-medium transition">
-                Forgot your password?
+                class="text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
+                Forgot password?
               </a>
             </div>
 
             <!-- Submit -->
-            <button type="submit" [disabled]="isLoading()"
-              class="w-full py-2.5 px-4 rounded-lg font-semibold text-sm text-white transition
-                     flex items-center justify-center gap-2
-                     bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+            <button mat-flat-button color="primary" type="submit"
+              [disabled]="isLoading()"
+              class="w-full min-h-[48px] flex items-center justify-center">
               @if (isLoading()) {
-                <mat-spinner diameter="18" />
-                Signing in...
+                <mat-spinner diameter="20" />
               } @else {
-                Sign in
+                Sign In
               }
             </button>
 
+            <!-- Error state -->
+            @if (errorMessage()) {
+              <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-4 flex items-center gap-2">
+                <mat-icon class="text-red-500 shrink-0" style="font-size:18px;width:18px;height:18px">error_outline</mat-icon>
+                <span class="text-sm text-red-700">{{ errorMessage() }}</span>
+              </div>
+            }
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 my-6">
+              <div class="border-t border-slate-200 flex-1"></div>
+              <span class="text-xs text-slate-400">or</span>
+              <div class="border-t border-slate-200 flex-1"></div>
+            </div>
+
+            <!-- Dev quick-fill (non-production only) -->
+            @if (!isProd) {
+              <div class="flex gap-2">
+                <button mat-stroked-button type="button"
+                  class="flex-1 text-xs min-h-[44px]"
+                  (click)="fillCredentials('admin')">Admin</button>
+                <button mat-stroked-button type="button"
+                  class="flex-1 text-xs min-h-[44px]"
+                  (click)="fillCredentials('lecturer')">Lecturer</button>
+                <button mat-stroked-button type="button"
+                  class="flex-1 text-xs min-h-[44px]"
+                  (click)="fillCredentials('student')">Student</button>
+              </div>
+            }
+
           </form>
         </div>
-
       </div>
+
     </div>
   `,
 })
 export class LoginComponent {
   loginForm: FormGroup;
 
-  // Local UI state as signals
   isLoading = signal(false);
   showPassword = signal(false);
   errorMessage = signal<string | null>(null);
+
+  protected readonly isProd = environment.production;
 
   constructor(
     private fb: FormBuilder,
@@ -163,5 +189,14 @@ export class LoginComponent {
         this.isLoading.set(false);
       },
     });
+  }
+
+  fillCredentials(role: 'admin' | 'lecturer' | 'student'): void {
+    const creds = {
+      admin:    { email: 'admin@lms.com',    password: 'Admin@123'    },
+      lecturer: { email: 'lecturer@lms.com', password: 'Lecturer@123' },
+      student:  { email: 'student1@lms.com', password: 'Student@123'  },
+    };
+    this.loginForm.patchValue(creds[role]);
   }
 }
