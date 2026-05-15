@@ -20,6 +20,6 @@ export class AttendanceService {
   }
 
   markAttendance(request: MarkAttendanceRequest): Observable<void> {
-    return this.api.post<void>('/attendance/mark', request);
+    return this.api.post<void>(`/attendance/session/${request.timetableSessionId}`, request);
   }
 }
