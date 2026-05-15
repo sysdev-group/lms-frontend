@@ -360,7 +360,9 @@ export class AssignmentListComponent implements OnInit {
 
     if (this.userRole() === 'Student') {
       forkJoin({
-        assignments: this.assignmentService.getAssignments(this.courseId),
+        assignments: this.courseId
+          ? this.assignmentService.getAssignments(this.courseId)
+          : this.assignmentService.getMyAssignments(),
         submissions: this.submissionService.getMySubmissions().pipe(catchError(() => of<Submission[]>([])))
       }).pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
