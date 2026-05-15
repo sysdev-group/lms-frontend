@@ -355,6 +355,7 @@ export class AssignmentListComponent implements OnInit {
   }
 
   private loadAssignments(): void {
+    if (!this.authService.currentUser()) return;
     this.isLoading.set(true);
     this.error.set(null);
 
