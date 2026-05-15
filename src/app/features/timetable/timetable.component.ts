@@ -44,9 +44,7 @@ interface WeekDay {
           <h1 class="font-display text-2xl font-bold text-slate-900">
             {{ isAdmin() ? 'Timetable' : canManage() ? 'Manage Timetable' : 'My Timetable' }}
           </h1>
-          @if (!canManage()) {
-            <p class="text-slate-500 text-sm mt-1">Your scheduled classes for this week</p>
-          }
+          <p class="text-slate-500 text-sm mt-1">Weekly Schedule</p>
           @if (isAdmin()) {
             <span class="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full mt-1">
               Admin View
@@ -126,30 +124,25 @@ interface WeekDay {
         </div>
       }
 
-      <!-- ─── Week Navigation ─── -->
-      <div class="lms-card mb-6 flex items-center justify-between gap-4 flex-wrap py-3">
-        <button mat-icon-button (click)="goToPrevWeek()" aria-label="Previous week" class="min-h-[44px] min-w-[44px]">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-        <span class="font-semibold text-slate-700 text-sm sm:text-base select-none">{{ weekLabel() }}</span>
-        <div class="flex items-center gap-2">
-          <button mat-stroked-button class="min-h-[44px]" (click)="jumpToToday()">Today</button>
-          <button mat-icon-button (click)="goToNextWeek()" aria-label="Next week" class="min-h-[44px] min-w-[44px]">
-            <mat-icon>arrow_forward</mat-icon>
-          </button>
-        </div>
-      </div>
-
       <!-- ─── Loading skeleton ─── -->
       @if (isLoading() && sessions().length === 0 && !errorMessage()) {
         <div class="hidden md:grid grid-cols-5 gap-3 animate-pulse">
           @for (i of [1,2,3,4,5]; track i) {
-            <div class="bg-slate-200 rounded-xl h-48"></div>
+            <div class="flex flex-col gap-2">
+              <div class="bg-slate-200 rounded-lg h-10"></div>
+              <div class="bg-slate-100 rounded-xl flex-1 min-h-[180px] p-2 flex flex-col gap-2">
+                <div class="bg-slate-200 rounded-lg h-24"></div>
+                <div class="bg-slate-200 rounded-lg h-16"></div>
+              </div>
+            </div>
           }
         </div>
-        <div class="md:hidden space-y-3 animate-pulse">
-          @for (i of [1,2,3]; track i) {
-            <div class="h-16 bg-slate-200 rounded-xl"></div>
+        <div class="md:hidden space-y-4 animate-pulse">
+          @for (i of [1,2,3,4,5]; track i) {
+            <div>
+              <div class="bg-slate-200 rounded h-5 w-24 mb-2"></div>
+              <div class="bg-slate-200 rounded-xl h-16 mb-2"></div>
+            </div>
           }
         </div>
       } @else if (errorMessage()) {
@@ -160,7 +153,7 @@ interface WeekDay {
       } @else {
 
         <!-- ════════════════════════════════════════
-             DESKTOP WEEKLY GRID  (md and above)
+             DESKTOP FIXED WEEKLY GRID  (md and above)
         ════════════════════════════════════════ -->
         <div class="hidden md:grid grid-cols-5 gap-3">
           @for (day of weekDays(); track day.name) {
@@ -168,10 +161,16 @@ interface WeekDay {
 
               <!-- Column header -->
               <div [class]="day.isToday
-                ? 'rounded-lg px-3 py-2 text-center bg-primary-600 text-white'
+                ? 'rounded-lg px-3 py-2 text-center bg-blue-50 border border-blue-200'
                 : 'rounded-lg px-3 py-2 text-center bg-white border border-slate-200'">
-                <p class="font-semibold text-sm">{{ day.name }}</p>
-                <p class="text-xs opacity-70">{{ day.date | date:'d MMM' }}</p>
+                <p [class]="day.isToday
+                  ? 'font-semibold text-sm text-blue-700'
+                  : 'font-semibold text-sm text-slate-700'">
+                  {{ day.name }}
+                </p>
+                @if (day.isToday) {
+                  <p class="text-xs text-blue-400 font-medium">Today</p>
+                }
               </div>
 
               <!-- Sessions column -->
@@ -180,8 +179,8 @@ interface WeekDay {
                 : 'bg-slate-50 rounded-xl p-2 flex flex-col gap-2 flex-1 min-h-[180px]'">
 
                 @if (sessionsForDay(day.name).length === 0) {
-                  <div class="bg-white border border-dashed border-slate-200 rounded-lg min-h-[80px] flex items-center justify-center">
-                    <span class="text-slate-300 text-xs">No classes</span>
+                  <div class="bg-slate-50 border border-dashed border-slate-200 rounded-lg min-h-[120px] flex items-center justify-center">
+                    <span class="text-slate-400 text-sm">No classes</span>
                   </div>
                 }
 
@@ -236,24 +235,27 @@ interface WeekDay {
         </div>
 
         <!-- ════════════════════════════════════════
-             MOBILE CHRONOLOGICAL LIST  (below md)
+             MOBILE DAY LIST  (below md)
         ════════════════════════════════════════ -->
-        <div class="md:hidden space-y-6">
+        <div class="md:hidden space-y-5">
           @if (sessions().length === 0) {
             <div class="lms-card text-center py-12">
               <mat-icon class="text-slate-300 !text-4xl mb-3">calendar_today</mat-icon>
-              <p class="text-slate-500">No classes scheduled this week</p>
+              <p class="text-slate-500">No classes scheduled</p>
             </div>
           }
           @for (day of weekDays(); track day.name) {
             <div>
               <h3 [class]="day.isToday
-                ? 'font-semibold text-primary-600 text-sm mb-2 px-1'
+                ? 'font-semibold text-blue-600 text-sm mb-2 px-1 flex items-center gap-2'
                 : 'font-semibold text-slate-600 text-sm mb-2 px-1'">
-                {{ day.name }} &middot; {{ day.date | date:'d MMM' }}
+                {{ day.name }}
+                @if (day.isToday) {
+                  <span class="bg-blue-100 text-blue-600 text-xs font-medium px-2 py-0.5 rounded-full">Today</span>
+                }
               </h3>
               @if (sessionsForDay(day.name).length === 0) {
-                <p class="text-xs text-slate-400 pl-2">No classes</p>
+                <p class="text-xs text-slate-400 pl-2 mb-1">No classes</p>
               }
               @for (session of sessionsForDay(day.name); track session.id; let idx = $index) {
                 <div [class]="sessionCardBg(session) + ' rounded-lg border p-3 mb-2 flex items-start gap-3 relative overflow-hidden'">
@@ -267,6 +269,7 @@ interface WeekDay {
                         <span class="inline-block bg-amber-100 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full mb-1">Draft</span>
                       }
                       <p class="font-semibold text-slate-800 text-sm">{{ session.courseTitle }}</p>
+                      <p class="text-xs text-slate-500 mt-0.5">{{ session.startTime }} – {{ session.endTime }}</p>
                       <div class="flex items-center gap-1 mt-0.5">
                         <mat-icon class="text-slate-400 !text-xs !w-3 !h-3 leading-none">room</mat-icon>
                         <span class="text-xs text-slate-500">{{ session.room }}</span>
@@ -274,6 +277,25 @@ interface WeekDay {
                       <span [class]="typeBadgeClass(session.type) + ' inline-block text-xs font-medium px-2 py-0.5 rounded-full mt-1'">
                         {{ session.type }}
                       </span>
+                      @if (canManage() && !isAdmin()) {
+                        <div class="flex items-center gap-1 mt-2 flex-wrap">
+                          @if (!session.isPublished) {
+                            <button mat-stroked-button color="primary"
+                              class="!text-xs !min-h-[28px] !h-[28px] !leading-none !px-2"
+                              [disabled]="isLoading()"
+                              (click)="publishSession(session)">
+                              Publish
+                            </button>
+                          }
+                          <button mat-icon-button color="warn"
+                            class="!w-[28px] !h-[28px] !min-h-[44px]"
+                            matTooltip="Delete session"
+                            [disabled]="isLoading()"
+                            (click)="deleteSession(session)">
+                            <mat-icon class="!text-base">delete</mat-icon>
+                          </button>
+                        </div>
+                      }
                     </div>
                   </div>
                 </div>
