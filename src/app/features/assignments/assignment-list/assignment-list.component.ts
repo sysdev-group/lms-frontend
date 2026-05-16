@@ -378,8 +378,10 @@ export class AssignmentListComponent implements OnInit {
           },
         });
     } else {
-      this.assignmentService.getAssignments(this.courseId)
-        .pipe(takeUntilDestroyed(this.destroyRef))
+      const obs = this.courseId
+        ? this.assignmentService.getAssignments(this.courseId)
+        : this.assignmentService.getMyAssignments();
+      obs.pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (data) => {
             this.assignments.set(data.map(a => ({ ...a, ...this.deadlineInfo(a.deadline) })));
