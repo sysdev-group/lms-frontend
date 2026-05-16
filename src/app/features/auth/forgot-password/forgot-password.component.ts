@@ -42,14 +42,24 @@ import { AuthService } from '@core/auth/auth.service';
               <mat-icon class="text-green-500 mb-3" style="font-size:48px;width:48px;height:48px">
                 mark_email_read
               </mat-icon>
-              <h2 class="font-display text-lg font-semibold text-slate-800 mb-2">Check your inbox</h2>
-              <p class="text-slate-500 text-sm mb-6">
-                If an account exists for
-                <strong class="text-slate-700">{{ emailSent() }}</strong>,
-                a reset link has been sent.
-              </p>
+              <h2 class="font-display text-xl font-bold text-slate-900 mb-2">Check your inbox</h2>
+              <p class="text-slate-500 text-sm">We sent a password reset link to:</p>
+              <p class="font-semibold text-slate-700 mt-1">{{ emailSent() }}</p>
+              <p class="text-slate-400 text-xs mt-2">The link expires in 30 minutes.</p>
+
+              <div class="border-t border-slate-100 mt-6 pt-4">
+                <p class="text-slate-500 text-sm">
+                  Didn't receive it?
+                  <button type="button"
+                    class="text-blue-600 hover:text-blue-700 font-medium transition-colors ml-1"
+                    (click)="resend()">
+                    Resend
+                  </button>
+                </p>
+              </div>
+
               <a routerLink="/auth/login"
-                class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                class="block mt-4 text-sm text-slate-400 hover:text-slate-600 transition-colors">
                 Back to sign in
               </a>
             </div>
@@ -132,5 +142,10 @@ export class ForgotPasswordComponent {
         this.isLoading.set(false);
       },
     });
+  }
+
+  resend(): void {
+    this.submitted.set(false);
+    this.onSubmit();
   }
 }
