@@ -266,11 +266,15 @@ export class EnrollmentComponent implements OnInit {
   }
 
   private loadCourseSemesterId(courseId: string): void {
+    this.formError.set(null);
     this.courseService.getCourseSemesterId(courseId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (id) => this.enrollForm.patchValue({ semesterId: id }),
-        error: () => {},
+        error: (err) => {
+          this.enrollForm.patchValue({ semesterId: '' });
+          this.formError.set(err?.error?.message ?? 'Failed to load semester ID for the selected module.');
+        },
       });
   }
 
