@@ -97,17 +97,6 @@ import {
                 </td>
               </ng-container>
 
-              <ng-container matColumnDef="actions">
-                <th mat-header-cell *matHeaderCellDef class="!pr-4 bg-slate-50"></th>
-                <td mat-cell *matCellDef="let e" class="!pr-4">
-                  <button mat-button color="warn"
-                    [disabled]="e.status !== 'Active'"
-                    (click)="onDrop(e)">
-                    Drop
-                  </button>
-                </td>
-              </ng-container>
-
               <tr mat-header-row *matHeaderRowDef="studentColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: studentColumns;"
                 class="hover:bg-slate-50 transition-colors">
@@ -116,7 +105,7 @@ import {
           </div>
         }
 
-      } @else {
+      } @else if (userRole() === 'Admin') {
 
         <!-- ── Admin / Lecturer view ── -->
         <mat-card class="mb-6">
@@ -177,6 +166,11 @@ import {
           </mat-card-content>
         </mat-card>
 
+      } @else {
+        <div class="lms-card text-center py-12">
+          <mat-icon class="text-slate-300 mb-3">lock</mat-icon>
+          <p class="text-slate-500">Enrollment management is available to admins only.</p>
+        </div>
       }
     </div>
   `,
@@ -195,7 +189,7 @@ export class EnrollmentComponent implements OnInit {
   enrollForm: FormGroup;
 
   readonly userRole = this.authService.userRole;
-  readonly studentColumns = ['course', 'status', 'enrolledAt', 'actions'];
+  readonly studentColumns = ['course', 'status', 'enrolledAt'];
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -219,7 +213,7 @@ export class EnrollmentComponent implements OnInit {
     const role = this.authService.currentUser()?.role;
     if (role === 'Student') {
       this.loadStudentEnrollments();
-    } else {
+    } else if (role === 'Admin') {
       this.loadFormData();
       this.enrollForm.get('courseId')!.valueChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
