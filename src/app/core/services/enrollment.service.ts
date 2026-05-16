@@ -23,8 +23,4 @@ export class EnrollmentService {
   getStudentEnrollments(studentId: string): Observable<Enrollment[]> {
     return this.api.get<Enrollment[]>(`/enrollment/student/${studentId}`);
   }
-
-  getCourseEnrollments(courseId: string): Observable<Enrollment[]> {
-    return this.api.get<Enrollment[]>(`/enrollment/course/${courseId}`);
-  }
 }

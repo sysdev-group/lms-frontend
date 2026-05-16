@@ -177,62 +177,6 @@ import {
           </mat-card-content>
         </mat-card>
 
-        <!-- Course enrollment list (shown once a course is selected) -->
-        @if (selectedCourseId()) {
-          <h2 class="font-display font-semibold text-slate-700 mb-3">Enrolled Students</h2>
-
-          @if (listLoading()) {
-            <div class="flex justify-center py-8">
-              <mat-spinner diameter="36" />
-            </div>
-          } @else if (courseEnrollments().length === 0) {
-            <div class="lms-card text-center py-10">
-              <mat-icon class="text-slate-300 mb-2">people</mat-icon>
-              <p class="text-slate-500">No students enrolled in this course yet.</p>
-            </div>
-          } @else {
-            <div class="lms-card p-0 overflow-hidden">
-              <table mat-table [dataSource]="courseEnrollments()" class="w-full">
-
-                <ng-container matColumnDef="student">
-                  <th mat-header-cell *matHeaderCellDef
-                    class="!pl-6 font-semibold text-slate-700 bg-slate-50 text-xs uppercase tracking-wide">
-                    Student
-                  </th>
-                  <td mat-cell *matCellDef="let e" class="!pl-6 font-medium text-slate-800">
-                    {{ e.studentName }}
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef
-                    class="font-semibold text-slate-700 bg-slate-50 text-xs uppercase tracking-wide">
-                    Status
-                  </th>
-                  <td mat-cell *matCellDef="let e">
-                    <span [class]="statusCss(e.status)">{{ e.status }}</span>
-                  </td>
-                </ng-container>
-
-                <ng-container matColumnDef="enrolledAt">
-                  <th mat-header-cell *matHeaderCellDef
-                    class="font-semibold text-slate-700 bg-slate-50 text-xs uppercase tracking-wide">
-                    Enrolled
-                  </th>
-                  <td mat-cell *matCellDef="let e" class="text-slate-600 text-sm">
-                    {{ e.enrolledAt | date:'mediumDate' }}
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="adminColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: adminColumns;"
-                  class="hover:bg-slate-50 transition-colors">
-                </tr>
-              </table>
-            </div>
-          }
-        }
-
       }
     </div>
   `,
@@ -241,21 +185,17 @@ export class EnrollmentComponent implements OnInit {
   enrollments = signal<Enrollment[]>([]);
   courses = signal<Course[]>([]);
   students = signal<User[]>([]);
-  courseEnrollments = signal<Enrollment[]>([]);
 
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   formLoading = signal(false);
   formError = signal<string | null>(null);
   isSubmitting = signal(false);
-  listLoading = signal(false);
-  selectedCourseId = signal<string | null>(null);
 
   enrollForm: FormGroup;
 
   readonly userRole = this.authService.userRole;
   readonly studentColumns = ['course', 'status', 'enrolledAt', 'actions'];
-  readonly adminColumns = ['student', 'status', 'enrolledAt'];
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -285,12 +225,8 @@ export class EnrollmentComponent implements OnInit {
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((courseId: string | null) => {
           if (courseId) {
-            this.selectedCourseId.set(courseId);
-            this.loadCourseEnrollments(courseId);
             this.loadCourseSemesterId(courseId);
           } else {
-            this.selectedCourseId.set(null);
-            this.courseEnrollments.set([]);
             this.enrollForm.patchValue({ semesterId: '' });
           }
         });
@@ -335,22 +271,6 @@ export class EnrollmentComponent implements OnInit {
       });
   }
 
-  private loadCourseEnrollments(courseId: string): void {
-    this.listLoading.set(true);
-    this.courseEnrollments.set([]);
-    this.enrollmentService.getCourseEnrollments(courseId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (data) => {
-          this.courseEnrollments.set(data);
-          this.listLoading.set(false);
-        },
-        error: () => {
-          this.listLoading.set(false);
-        },
-      });
-  }
-
   private loadCourseSemesterId(courseId: string): void {
     this.courseService.getCourseSemesterId(courseId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -377,8 +297,6 @@ export class EnrollmentComponent implements OnInit {
           this.snackBar.open('Student enrolled successfully.', 'Close', { duration: 3000 });
           this.isSubmitting.set(false);
           this.enrollForm.reset();
-          this.selectedCourseId.set(courseId);
-          this.loadCourseEnrollments(courseId);
         },
         error: (err) => {
           this.snackBar.open(err?.error?.message ?? 'Enrollment failed.', 'Dismiss', { duration: 4000 });
