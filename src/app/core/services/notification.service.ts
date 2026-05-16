@@ -1,11 +1,16 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiService } from '@core/services/api.service';
+import { environment } from '@env/environment';
 import { Notification, SendNotificationRequest } from '@shared/models/models';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  constructor(private api: ApiService) {}
+  constructor(
+    private api: ApiService,
+    private http: HttpClient,
+  ) {}
 
   getMyNotifications(unreadOnly = false): Observable<Notification[]> {
     return this.api.get<Notification[]>('/notifications', { unreadOnly });
@@ -16,7 +21,7 @@ export class NotificationService {
   }
 
   markAsRead(id: string): Observable<void> {
-    return this.api.patch<void>(`/notifications/${id}/read`);
+    return this.http.patch<void>(`${environment.apiUrl}/notifications/${id}/read`, {});
   }
 
   markAllAsRead(): Observable<string> {
