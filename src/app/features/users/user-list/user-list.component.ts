@@ -1,18 +1,89 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, Inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog, MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UserService } from '@core/services/user.service';
-import { User, UserRole, UserQueryParams } from '@shared/models/models';
+import { User, UserRole, UserQueryParams, CreateUserRequest, BulkImportResult } from '@shared/models/models';
+
+@Component({
+  selector: 'app-create-user-dialog',
+  standalone: true,
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatDialogModule, MatProgressSpinnerModule],
+  template: `
+    <h2 mat-dialog-title>Add User</h2>
+    <mat-dialog-content>
+      <form [formGroup]="form" class="flex flex-col gap-2 pt-2">
+        <mat-form-field appearance="outline">
+          <mat-label>First name</mat-label>
+          <input matInput formControlName="firstName" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Last name</mat-label>
+          <input matInput formControlName="lastName" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Role</mat-label>
+          <mat-select formControlName="role">
+            <mat-option value="Student">Student</mat-option>
+            <mat-option value="Lecturer">Lecturer</mat-option>
+            <mat-option value="Admin">Admin</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-flat-button color="primary"
+        [disabled]="form.invalid || saving()"
+        (click)="submit()">
+        @if (saving()) { <mat-spinner diameter="18" class="inline-block mr-1" /> Saving... }
+        @else { Create User }
+      </button>
+    </mat-dialog-actions>
+  `,
+})
+export class CreateUserDialogComponent {
+  saving = signal(false);
+  form: FormGroup;
+
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserService,
+    private dialogRef: MatDialogRef<CreateUserDialogComponent>,
+  ) {
+    this.form = this.fb.group({
+      firstName: ['', Validators.required],
+      lastName:  ['', Validators.required],
+      email:     ['', [Validators.required, Validators.email]],
+      role:      ['Student', Validators.required],
+    });
+  }
+
+  submit(): void {
+    if (this.form.invalid) return;
+    this.saving.set(true);
+    this.userService.createUser(this.form.value as CreateUserRequest).subscribe({
+      next: user => this.dialogRef.close(user),
+      error: () => this.saving.set(false),
+    });
+  }
+}
 
 @Component({
   selector: 'app-user-list',
@@ -24,10 +95,13 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
     MatPaginatorModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatButtonModule,
     MatButtonToggleModule,
     MatIconModule,
     MatTooltipModule,
+    MatDialogModule,
+    MatProgressSpinnerModule,
   ],
   template: `
     <div class="page-container">
@@ -39,11 +113,12 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
           <p class="text-slate-500 mt-1 text-sm">{{ totalCount() }} users registered</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <button mat-stroked-button class="min-h-[44px]">
-            <mat-icon>upload</mat-icon>
-            Bulk Import
+          <input #csvInput type="file" accept=".csv" class="hidden" (change)="onCsvSelected($event)" />
+          <button mat-stroked-button class="min-h-[44px]" (click)="csvInput.click()" [disabled]="isBulkImporting()">
+            @if (isBulkImporting()) { <mat-spinner diameter="18" class="inline-block mr-1" /> Importing... }
+            @else { <mat-icon>upload</mat-icon> Bulk Import }
           </button>
-          <button mat-flat-button color="primary" class="min-h-[44px]">
+          <button mat-flat-button color="primary" class="min-h-[44px]" (click)="openCreateUserDialog()">
             <mat-icon>add</mat-icon>
             Add User
           </button>
@@ -229,6 +304,7 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
 export class UserListComponent implements OnInit {
   users = signal<User[]>([]);
   isLoading = signal(false);
+  isBulkImporting = signal(false);
   totalCount = signal(0);
   page = signal(0);
   pageSize = signal(10);
@@ -240,6 +316,7 @@ export class UserListComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private fb: FormBuilder,
+    private dialog: MatDialog,
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -297,6 +374,33 @@ export class UserListComponent implements OnInit {
     }
     this.userService.deactivateUser(user.id).subscribe({
       next: () => this.loadUsers(),
+    });
+  }
+
+  openCreateUserDialog(): void {
+    this.dialog.open(CreateUserDialogComponent, { width: '420px' })
+      .afterClosed()
+      .subscribe(created => { if (created) this.loadUsers(); });
+  }
+
+  onCsvSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.isBulkImporting.set(true);
+    this.userService.bulkImport(file).subscribe({
+      next: (result: BulkImportResult) => {
+        this.isBulkImporting.set(false);
+        (event.target as HTMLInputElement).value = '';
+        const msg = `Import complete: ${result.created} created, ${result.skipped} skipped.` +
+          (result.errors.length ? `\n\nErrors:\n${result.errors.join('\n')}` : '');
+        alert(msg);
+        this.loadUsers();
+      },
+      error: () => {
+        this.isBulkImporting.set(false);
+        (event.target as HTMLInputElement).value = '';
+        alert('Bulk import failed. Please check the file format and try again.');
+      },
     });
   }
 

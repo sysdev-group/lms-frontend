@@ -81,9 +81,9 @@ export interface UserQueryParams {
 }
 
 export interface BulkImportResult {
-  successCount: number;
-  failureCount: number;
-  errors: { row: number; message: string }[];
+  created: number;
+  skipped: number;
+  errors: string[];
 }
 
 // ─── Files ────────────────────────────────────────────────────────────────────
