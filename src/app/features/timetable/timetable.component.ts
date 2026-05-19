@@ -55,7 +55,7 @@ interface WeekDay {
             </span>
           }
         </div>
-        @if (canManage()) {
+        @if (isAdmin()) {
           <button mat-flat-button color="primary" class="min-h-[44px]"
             [disabled]="isLoading()"
             (click)="toggleCreateForm()">
@@ -477,8 +477,11 @@ export class TimetableComponent implements OnInit {
   createSession(valid: boolean | null): void {
     if (!valid) return;
     const user = this.authService.currentUser();
+    const toTimeOnly = (t: string) => t.length === 5 ? `${t}:00` : t;
     const request: CreateSessionRequest = {
       ...this.newSession,
+      startTime: toTimeOnly(this.newSession.startTime),
+      endTime: toTimeOnly(this.newSession.endTime),
       lecturerId: user?.role === 'Lecturer' ? (user.id ?? this.newSession.lecturerId) : this.newSession.lecturerId,
     };
     this.isSaving.set(true);
