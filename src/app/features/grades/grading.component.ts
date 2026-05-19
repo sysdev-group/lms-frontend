@@ -471,23 +471,40 @@ export class GradingComponent implements OnInit {
   saveGrade(row: SubmissionRow): void {
     if (row.gradeForm.invalid || this.savingIds().has(row.id)) return;
     this.savingIds.update(ids => new Set([...ids, row.id]));
+    const courseId = this.selectedAssignment()?.courseId;
     this.gradeService.gradeSubmission(row.id, {
       marksAwarded: row.gradeForm.value.marks,
       feedback: row.gradeForm.value.feedback || undefined,
-    }).pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: grade => {
-          this.submissions.update(rows =>
-            rows.map(r => r.id === row.id ? { ...r, isGraded: true, gradeId: grade.id } : r)
-          );
-          this.removeSavingId(row.id);
-          this.snackBar.open('Grade saved.', 'OK', { duration: 3000 });
-        },
-        error: () => {
-          this.removeSavingId(row.id);
-          this.snackBar.open('Failed to save grade.', 'Dismiss', { duration: 4000 });
-        },
-      });
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => {
+        if (!courseId) { this.removeSavingId(row.id); return; }
+        this.gradeService.getGradesByCourse(courseId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: grades => {
+              const grade = grades.find(g => g.studentId === row.studentId);
+              this.submissions.update(rows =>
+                rows.map(r => r.id === row.id ? { ...r, isGraded: true, gradeId: grade?.id ?? null } : r)
+              );
+              this.removeSavingId(row.id);
+              this.snackBar.open('Grade saved.', 'OK', { duration: 3000 });
+            },
+            error: () => {
+              this.submissions.update(rows =>
+                rows.map(r => r.id === row.id ? { ...r, isGraded: true } : r)
+              );
+              this.removeSavingId(row.id);
+              this.snackBar.open('Grade saved.', 'OK', { duration: 3000 });
+            },
+          });
+      },
+      error: () => {
+        this.removeSavingId(row.id);
+        this.snackBar.open('Failed to save grade.', 'Dismiss', { duration: 4000 });
+      },
+    });
   }
 
   publishGrade(gradeId: string, submissionId: string): void {

@@ -153,7 +153,7 @@ const ALL_NAV_ITEMS = [
   { path: '/programmes',    label: 'Programmes',     icon: 'school',         roles: ['Admin', 'Student'] },
   { path: '/courses',       label: 'Courses',        icon: 'menu_book',      roles: null },
   { path: '/assignments',   label: 'Assignments',    icon: 'assignment',     roles: ['Lecturer', 'Student'] },
-  { path: '/grades',        label: 'Grades',         icon: 'grade',          roles: ['Lecturer', 'Student'] },
+  { path: '/grades',        label: 'Grades',         icon: 'grade',          roles: null },
   { path: '/timetable',     label: 'Timetable',      icon: 'calendar_month', roles: null },
   { path: '/attendance',    label: 'Attendance',     icon: 'how_to_reg',     roles: ['Lecturer', 'Student'] },
   { path: '/notifications', label: 'Notifications',  icon: 'notifications',  roles: null },
