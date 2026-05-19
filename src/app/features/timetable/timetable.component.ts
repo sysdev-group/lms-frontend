@@ -336,7 +336,7 @@ export class TimetableComponent implements OnInit {
     const start = this.currentWeekStart();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((name, i) => {
+    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((name, i) => {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
       date.setHours(0, 0, 0, 0);

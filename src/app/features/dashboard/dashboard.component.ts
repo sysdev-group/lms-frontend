@@ -1245,7 +1245,7 @@ export class DashboardComponent implements OnInit {
     const userId = this.authService.currentUser()!.id;
     this.isLoading.set(true);
     forkJoin({
-      assignments: this.assignmentService.getAssignments().pipe(
+      assignments: this.assignmentService.getMyAssignments().pipe(
         catchError(() => of<Assignment[]>([])),
       ),
       enrollments: this.enrollmentService.getStudentEnrollments(userId).pipe(
