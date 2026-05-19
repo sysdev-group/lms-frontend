@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ElementRef, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -11,6 +11,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { UserService } from '@core/services/user.service';
 import { User, UserRole, UserQueryParams } from '@shared/models/models';
 
@@ -28,6 +30,8 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
     MatButtonToggleModule,
     MatIconModule,
     MatTooltipModule,
+    MatSnackBarModule,
+    MatProgressBarModule,
   ],
   template: `
     <div class="page-container">
@@ -39,11 +43,17 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
           <p class="text-slate-500 mt-1 text-sm">{{ totalCount() }} users registered</p>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
-          <button mat-stroked-button class="min-h-[44px]">
+          <input #csvInput type="file" accept=".csv" class="hidden"
+            (change)="onCsvSelected($event)" />
+          <button mat-stroked-button class="min-h-[44px]"
+            [disabled]="isImporting()"
+            matTooltip="CSV format: FirstName,LastName,Email,Role"
+            (click)="csvInput.click()">
             <mat-icon>upload</mat-icon>
             Bulk Import
           </button>
-          <button mat-flat-button color="primary" class="min-h-[44px]">
+          <button mat-flat-button color="primary" class="min-h-[44px]"
+            (click)="addUser()">
             <mat-icon>add</mat-icon>
             Add User
           </button>
@@ -229,6 +239,7 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
 export class UserListComponent implements OnInit {
   users = signal<User[]>([]);
   isLoading = signal(false);
+  isImporting = signal(false);
   totalCount = signal(0);
   page = signal(0);
   pageSize = signal(10);
@@ -240,6 +251,7 @@ export class UserListComponent implements OnInit {
     private userService: UserService,
     private router: Router,
     private fb: FormBuilder,
+    private snackBar: MatSnackBar,
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -286,8 +298,34 @@ export class UserListComponent implements OnInit {
     this.loadUsers();
   }
 
+  addUser(): void {
+    this.router.navigate(['/users/new']);
+  }
+
   editUser(user: User): void {
     this.router.navigate(['/users', user.id]);
+  }
+
+  onCsvSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    (event.target as HTMLInputElement).value = '';
+
+    this.isImporting.set(true);
+    this.userService.bulkImport(file).subscribe({
+      next: result => {
+        this.isImporting.set(false);
+        const msg = `Imported ${result.successCount} user(s).` +
+          (result.failureCount ? ` ${result.failureCount} failed.` : '') +
+          (result.errors?.length ? ` ${result.errors[0]}` : '');
+        this.snackBar.open(msg, 'Dismiss', { duration: 6000 });
+        this.loadUsers();
+      },
+      error: err => {
+        this.isImporting.set(false);
+        this.snackBar.open(err?.error?.message ?? 'Bulk import failed.', 'Dismiss', { duration: 4000 });
+      },
+    });
   }
 
   onDeactivateClick(user: User): void {

@@ -439,7 +439,7 @@ export class GradingComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.assignmentService.getAssignments()
+    this.assignmentService.getMyAssignments()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: assignments => {

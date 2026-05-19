@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AbstractControl,
   FormControl,
@@ -143,12 +144,15 @@ export class AssignmentCreateDialogComponent implements OnInit {
   private readonly assignmentService = inject(AssignmentService);
   private readonly courseService = inject(CourseService);
   private readonly dialogRef = inject(MatDialogRef<AssignmentCreateDialogComponent>);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.courseService.getCourses().subscribe({
-      next: (result) => this.courses.set(result.items),
-      error: () => this.errorMessage.set('Failed to load courses. Please close and try again.'),
-    });
+    this.courseService.getCourses()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => this.courses.set(result.items),
+        error: () => this.errorMessage.set('Failed to load courses. Please close and try again.'),
+      });
   }
 
   submit(): void {
@@ -171,7 +175,8 @@ export class AssignmentCreateDialogComponent implements OnInit {
       maxMarks: maxMarks!,
       allowResubmission,
       turnitinEnabled: false,
-    }).subscribe({
+    }).pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe({
       next: () => {
         this.isLoading.set(false);
         this.dialogRef.close(true);

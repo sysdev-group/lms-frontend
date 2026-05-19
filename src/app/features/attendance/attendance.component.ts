@@ -471,6 +471,10 @@ export class AttendanceComponent implements OnInit {
     this.submitSuccess.set(false);
   }
 
+  private readonly statusToInt: Record<AttendanceStatus, number> = {
+    Present: 0, Absent: 1, Late: 2, Excused: 3, NotTaken: 4,
+  };
+
   submitAttendance(): void {
     if (!this.selectedSessionId) return;
 
@@ -483,7 +487,7 @@ export class AttendanceComponent implements OnInit {
       date: new Date().toISOString().split('T')[0],
       records: this.markableRecords().map(r => ({
         studentId: r.studentId,
-        status: r.status,
+        status: this.statusToInt[r.status] as unknown as AttendanceStatus,
         notes: r.notes || undefined,
       })),
     };
