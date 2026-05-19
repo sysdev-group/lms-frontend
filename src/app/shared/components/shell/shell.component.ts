@@ -150,12 +150,12 @@ export class ShellComponent implements OnDestroy {
 
 const ALL_NAV_ITEMS = [
   { path: '/dashboard',     label: 'Dashboard',     icon: 'home',           roles: null },
-  { path: '/programmes',    label: 'Programmes',     icon: 'school',         roles: null },
+  { path: '/programmes',    label: 'Programmes',     icon: 'school',         roles: ['Admin', 'Student'] },
   { path: '/courses',       label: 'Courses',        icon: 'menu_book',      roles: null },
-  { path: '/assignments',   label: 'Assignments',    icon: 'assignment',     roles: null },
-  { path: '/grades',        label: 'Grades',         icon: 'grade',          roles: null },
+  { path: '/assignments',   label: 'Assignments',    icon: 'assignment',     roles: ['Lecturer', 'Student'] },
+  { path: '/grades',        label: 'Grades',         icon: 'grade',          roles: ['Lecturer', 'Student'] },
   { path: '/timetable',     label: 'Timetable',      icon: 'calendar_month', roles: null },
-  { path: '/attendance',    label: 'Attendance',     icon: 'how_to_reg',     roles: null },
+  { path: '/attendance',    label: 'Attendance',     icon: 'how_to_reg',     roles: ['Lecturer', 'Student'] },
   { path: '/notifications', label: 'Notifications',  icon: 'notifications',  roles: null },
   { path: '/users',         label: 'Users',          icon: 'group',          roles: ['Admin'] },
   { path: '/enrollment',    label: 'Enrollment',     icon: 'person_add',     roles: ['Admin'] },

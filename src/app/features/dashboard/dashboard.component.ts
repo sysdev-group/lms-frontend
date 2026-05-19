@@ -1285,7 +1285,7 @@ export class DashboardComponent implements OnInit {
     this.isLoading.set(true);
     const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
     forkJoin({
-      assignments: this.assignmentService.getAssignments().pipe(
+      assignments: this.assignmentService.getMyAssignments().pipe(
         catchError(() => of<Assignment[]>([])),
       ),
       sessions: this.timetableService.getSessions().pipe(

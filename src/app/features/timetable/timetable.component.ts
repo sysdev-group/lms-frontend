@@ -2,6 +2,8 @@ import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angula
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -11,8 +13,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TimetableService } from '@core/services/timetable.service';
+import { CourseService } from '@core/services/course.service';
+import { UserService } from '@core/services/user.service';
 import { AuthService } from '@core/auth/auth.service';
-import { TimetableSession, CreateSessionRequest, SessionType } from '@shared/models/models';
+import { TimetableSession, CreateSessionRequest, SessionType, Course, User } from '@shared/models/models';
 
 interface WeekDay {
   name: string;
@@ -51,7 +55,7 @@ interface WeekDay {
             </span>
           }
         </div>
-        @if (canManage() && !isAdmin()) {
+        @if (canManage()) {
           <button mat-flat-button color="primary" class="min-h-[44px]"
             [disabled]="isLoading()"
             (click)="toggleCreateForm()">
@@ -67,25 +71,42 @@ interface WeekDay {
           <h2 class="font-display font-semibold text-slate-700 mb-4">New Session</h2>
           <form #createForm="ngForm" (ngSubmit)="createSession(createForm.valid)">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Course dropdown -->
               <mat-form-field appearance="outline">
-                <mat-label>Course ID</mat-label>
-                <input matInput [(ngModel)]="newSession.courseId" name="courseId" required />
+                <mat-label>Course</mat-label>
+                <mat-select [(ngModel)]="newSession.courseId" name="courseId" required
+                  (ngModelChange)="onCourseChange($event)">
+                  @if (isLoadingCourses()) {
+                    <mat-option disabled>Loading courses…</mat-option>
+                  }
+                  @for (course of courses(); track course.id) {
+                    <mat-option [value]="course.id">
+                      {{ course.code }} — {{ course.title }}
+                    </mat-option>
+                  }
+                </mat-select>
               </mat-form-field>
-              <mat-form-field appearance="outline">
-                <mat-label>Semester ID</mat-label>
-                <input matInput [(ngModel)]="newSession.semesterId" name="semesterId" required />
-              </mat-form-field>
-              @if (authService.currentUser()?.role === 'Admin') {
+
+              <!-- Lecturer: auto-filled for Lecturer role, dropdown for Admin -->
+              @if (isAdmin()) {
                 <mat-form-field appearance="outline">
-                  <mat-label>Lecturer ID</mat-label>
-                  <input matInput [(ngModel)]="newSession.lecturerId" name="lecturerId" required />
+                  <mat-label>Lecturer</mat-label>
+                  <mat-select [(ngModel)]="newSession.lecturerId" name="lecturerId" required>
+                    @if (isLoadingLecturers()) {
+                      <mat-option disabled>Loading lecturers…</mat-option>
+                    }
+                    @for (lec of lecturers(); track lec.id) {
+                      <mat-option [value]="lec.id">{{ lec.firstName }} {{ lec.lastName }}</mat-option>
+                    }
+                  </mat-select>
                 </mat-form-field>
               }
+
               <mat-form-field appearance="outline">
                 <mat-label>Day</mat-label>
                 <mat-select [(ngModel)]="newSession.dayOfWeek" name="dayOfWeek" required>
-                  @for (day of days; track $index) {
-                    <mat-option [value]="$index">{{ day }}</mat-option>
+                  @for (day of dayOptions; track day.value) {
+                    <mat-option [value]="day.value">{{ day.label }}</mat-option>
                   }
                 </mat-select>
               </mat-form-field>
@@ -126,8 +147,8 @@ interface WeekDay {
 
       <!-- ─── Loading skeleton ─── -->
       @if (isLoading() && sessions().length === 0 && !errorMessage()) {
-        <div class="hidden md:grid grid-cols-5 gap-3 animate-pulse">
-          @for (i of [1,2,3,4,5]; track i) {
+        <div class="hidden md:grid grid-cols-7 gap-3 animate-pulse">
+          @for (i of [1,2,3,4,5,6,7]; track i) {
             <div class="flex flex-col gap-2">
               <div class="bg-slate-200 rounded-lg h-10"></div>
               <div class="bg-slate-100 rounded-xl flex-1 min-h-[180px] p-2 flex flex-col gap-2">
@@ -155,7 +176,7 @@ interface WeekDay {
         <!-- ════════════════════════════════════════
              DESKTOP FIXED WEEKLY GRID  (md and above)
         ════════════════════════════════════════ -->
-        <div class="hidden md:grid grid-cols-5 gap-3">
+        <div class="hidden md:grid grid-cols-7 gap-3">
           @for (day of weekDays(); track day.name) {
             <div class="flex flex-col gap-2">
 
@@ -315,9 +336,22 @@ export class TimetableComponent implements OnInit {
   showCreateForm = signal(false);
   currentWeekStart = signal<Date>(this.getMonday(new Date()));
 
+  courses = signal<Course[]>([]);
+  lecturers = signal<User[]>([]);
+  isLoadingCourses = signal(false);
+  isLoadingLecturers = signal(false);
+
   newSession: CreateSessionRequest = this.emptySession();
 
-  readonly days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  readonly dayOptions = [
+    { label: 'Monday', value: 1 },
+    { label: 'Tuesday', value: 2 },
+    { label: 'Wednesday', value: 3 },
+    { label: 'Thursday', value: 4 },
+    { label: 'Friday', value: 5 },
+    { label: 'Saturday', value: 6 },
+    { label: 'Sunday', value: 0 },
+  ];
   readonly sessionTypes: SessionType[] = ['Lecture', 'Lab', 'Tutorial'];
 
   readonly canManage = computed(() => {
@@ -347,6 +381,8 @@ export class TimetableComponent implements OnInit {
   readonly authService = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly timetableService = inject(TimetableService);
+  private readonly courseService = inject(CourseService);
+  private readonly userService = inject(UserService);
   private readonly snackBar = inject(MatSnackBar);
 
   ngOnInit(): void {
@@ -394,8 +430,47 @@ export class TimetableComponent implements OnInit {
 
   toggleCreateForm(): void {
     this.showCreateForm.update(v => !v);
-    if (!this.showCreateForm()) {
+    if (this.showCreateForm()) {
+      this.loadFormData();
+    } else {
       this.newSession = this.emptySession();
+      this.courses.set([]);
+      this.lecturers.set([]);
+    }
+  }
+
+  onCourseChange(courseId: string): void {
+    if (!courseId) return;
+    this.courseService.getCourseSemesterId(courseId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: semId => { this.newSession.semesterId = semId; },
+        error: () => { this.newSession.semesterId = ''; },
+      });
+  }
+
+  private loadFormData(): void {
+    this.isLoadingCourses.set(true);
+    this.courseService.getCourses({ pageSize: 200 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: result => { this.courses.set(result.items); this.isLoadingCourses.set(false); },
+        error: () => this.isLoadingCourses.set(false),
+      });
+
+    if (this.isAdmin()) {
+      this.isLoadingLecturers.set(true);
+      this.userService.getUsers({ role: 'Lecturer', pageSize: 200 })
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: result => { this.lecturers.set(result.items); this.isLoadingLecturers.set(false); },
+          error: () => this.isLoadingLecturers.set(false),
+        });
+    } else {
+      const user = this.authService.currentUser();
+      if (user?.id) {
+        this.newSession.lecturerId = user.id;
+      }
     }
   }
 
