@@ -101,6 +101,24 @@ courses = signal<Course[]>([]);
 
 ---
 
+## Seed Accounts
+
+| Email | Password | Role |
+|-------|----------|------|
+| admin@lms.com | Admin@123 | Admin |
+| lecturer@lms.com | Lecturer@123 | Lecturer |
+| lecturer2@lms.com | Lecturer2@123 | Lecturer (no courses) |
+| student1@lms.com | Student@123 | Student |
+| student2@lms.com | Student@123 | Student |
+
+---
+
+## API Documentation
+
+Swagger UI: **http://localhost:5001/swagger**
+
+---
+
 ## Code Standards
 
 - All components are **standalone** — add imports explicitly, no shared module
