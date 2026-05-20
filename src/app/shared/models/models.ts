@@ -189,6 +189,7 @@ export interface Submission {
   status: SubmissionStatus;
   submittedAt: string;
   isLate: boolean;
+  fileId?: string | null;
   fileName: string | null;
   fileUrl?: string | null;
   isGraded: boolean;

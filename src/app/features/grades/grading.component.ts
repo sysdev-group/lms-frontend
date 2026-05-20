@@ -247,10 +247,18 @@ interface SubmissionRow extends Submission {
 
                       <!-- File attachment -->
                       @if (row.fileName) {
-                        <div class="flex items-center gap-1.5 text-sm text-slate-600 mb-3 cursor-pointer hover:text-primary-600 transition-colors w-fit">
-                          <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
-                          <span class="underline underline-offset-2">{{ row.fileName }}</span>
-                        </div>
+                        @if (row.fileUrl) {
+                          <a [href]="row.fileUrl" target="_blank" rel="noopener"
+                            class="flex items-center gap-1.5 text-sm text-slate-600 mb-3 hover:text-primary-600 transition-colors w-fit">
+                            <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
+                            <span class="underline underline-offset-2">{{ row.fileName }}</span>
+                          </a>
+                        } @else {
+                          <div class="flex items-center gap-1.5 text-sm text-slate-400 mb-3 w-fit">
+                            <mat-icon style="font-size:14px;width:14px;height:14px;line-height:1">attach_file</mat-icon>
+                            <span>{{ row.fileName }}</span>
+                          </div>
+                        }
                       }
 
                       <!-- Grade button (expands inline panel) -->

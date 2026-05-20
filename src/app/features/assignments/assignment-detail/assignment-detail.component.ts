@@ -189,7 +189,12 @@ interface SubmissionRow extends Submission {
                     }
                   </p>
                 </div>
-                <button mat-stroked-button class="min-h-[44px] shrink-0">View File</button>
+                @if (mySubmission()!.fileUrl) {
+                  <a [href]="mySubmission()!.fileUrl" target="_blank" rel="noopener"
+                    mat-stroked-button class="min-h-[44px] shrink-0">View File</a>
+                } @else {
+                  <button mat-stroked-button class="min-h-[44px] shrink-0" disabled>View File</button>
+                }
               </div>
             }
 
@@ -214,7 +219,12 @@ interface SubmissionRow extends Submission {
                     }
                   </p>
                 </div>
-                <button mat-stroked-button class="min-h-[44px] shrink-0">View File</button>
+                @if (mySubmission()!.fileUrl) {
+                  <a [href]="mySubmission()!.fileUrl" target="_blank" rel="noopener"
+                    mat-stroked-button class="min-h-[44px] shrink-0">View File</a>
+                } @else {
+                  <button mat-stroked-button class="min-h-[44px] shrink-0" disabled>View File</button>
+                }
               </div>
 
               @if (mySubmission()!.isGraded) {
