@@ -13,8 +13,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { UserService } from '@core/services/user.service';
 import { User, UserRole, UserQueryParams } from '@shared/models/models';
+import { UserCreateDialogComponent } from '../user-create-dialog/user-create-dialog.component';
 
 @Component({
   selector: 'app-user-list',
@@ -32,6 +34,7 @@ import { User, UserRole, UserQueryParams } from '@shared/models/models';
     MatTooltipModule,
     MatSnackBarModule,
     MatProgressBarModule,
+    MatDialogModule,
   ],
   template: `
     <div class="page-container">
@@ -252,6 +255,7 @@ export class UserListComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -299,7 +303,9 @@ export class UserListComponent implements OnInit {
   }
 
   addUser(): void {
-    this.router.navigate(['/users/new']);
+    this.dialog.open(UserCreateDialogComponent, { width: '480px' })
+      .afterClosed()
+      .subscribe(created => { if (created) this.loadUsers(); });
   }
 
   editUser(user: User): void {
